@@ -1,4 +1,4 @@
-const BASE = '';
+const BASE = import.meta.env.VITE_API_URL || '';
 
 export function getAuthToken(): string | null {
   return localStorage.getItem('gmpulse_token');
