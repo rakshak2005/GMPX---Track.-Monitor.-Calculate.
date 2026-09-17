@@ -6,10 +6,11 @@ export interface User {
   email: string;
   name: string;
   preferences: {
-    marketFilter?: 'All' | 'Open' | 'Upcoming';
+    marketFilter?: 'All' | 'Open' | 'Upcoming' | 'Closed';
     sort?: string;
   };
 }
+
 
 interface AuthContextType {
   user: User | null;

@@ -7,6 +7,7 @@ import { LiveIndicator } from '../components/LiveIndicator.js';
 import { SummaryCard, SkeletonCard } from '../components/SummaryCard.js';
 import { IpoTable, MobileIpoCard } from '../components/IpoTable.js';
 import { inr, money, pct, timeAgo } from '../utils/format.js';
+import { determineMarketStatus } from '../utils/calculations.js';
 import type { Ipo } from '../types/ipo.js';
 
 export function EmptyState({ onAdd }: { onAdd: () => void }) {
@@ -131,19 +132,19 @@ export function Dashboard({ onAdd }: { onAdd: () => void }) {
   useGmpAlerts(ipos.data);
 
   const [flashes, setFlashes] = useState<Record<string, 'up' | 'down'>>({});
-  const [filterMarket, setFilterMarketState] = useState<'All' | 'Open' | 'Upcoming'>(() => {
+  const [filterMarket, setFilterMarketState] = useState<'All' | 'Open' | 'Upcoming' | 'Closed'>(() => {
     const saved = localStorage.getItem('gmpulse_market_filter');
-    return (saved as 'All' | 'Open' | 'Upcoming') || 'Open';
+    return (saved as 'All' | 'Open' | 'Upcoming' | 'Closed') || 'Open';
   });
 
   // Sync preference if user is logged in
   useEffect(() => {
     if (user?.preferences?.marketFilter) {
-      setFilterMarketState(user.preferences.marketFilter);
+      setFilterMarketState(user.preferences.marketFilter as 'All' | 'Open' | 'Upcoming' | 'Closed');
     }
   }, [user]);
 
-  const setFilterMarket = (m: 'All' | 'Open' | 'Upcoming') => {
+  const setFilterMarket = (m: 'All' | 'Open' | 'Upcoming' | 'Closed') => {
     setFilterMarketState(m);
     localStorage.setItem('gmpulse_market_filter', m);
     if (user) {
@@ -179,7 +180,8 @@ export function Dashboard({ onAdd }: { onAdd: () => void }) {
 
   const availableRows = useMemo(() => {
     return rows.filter((r) => {
-      const matchStatus = filterMarket === 'All' || r.marketStatus === filterMarket;
+      const actualMarketStatus = determineMarketStatus(null, r.notes, r.marketStatus);
+      const matchStatus = filterMarket === 'All' || actualMarketStatus === filterMarket;
       const matchCat = filterCategory === 'All' || (r.category || 'Mainboard') === filterCategory;
       return matchStatus && matchCat;
     });
@@ -323,7 +325,7 @@ export function Dashboard({ onAdd }: { onAdd: () => void }) {
 
           <div className="flex flex-wrap gap-2 text-xs">
             <div className="inline-flex rounded-lg bg-white/5 p-0.5">
-              {(['All', 'Open', 'Upcoming'] as const).map((m) => (
+              {(['All', 'Open', 'Upcoming', 'Closed'] as const).map((m) => (
                 <button
                   key={m}
                   onClick={() => setFilterMarket(m)}
@@ -367,6 +369,7 @@ export function Dashboard({ onAdd }: { onAdd: () => void }) {
                 availableRows.map((ipo) => {
                   const isApplied = ipo.isApplied || (ipo.status !== 'Available' && (ipo.lotsApplied ?? 0) > 0);
                   const gmpPos = (ipo.currentGmp ?? 0) >= 0;
+                  const currentMarketStatus = determineMarketStatus(null, ipo.notes, ipo.marketStatus);
                   const estimatedLotProfit = ipo.currentGmp != null ? ipo.currentGmp * (ipo.lotSize || 15) : null;
                   return (
                     <tr
@@ -384,17 +387,19 @@ export function Dashboard({ onAdd }: { onAdd: () => void }) {
                       <td className="px-3 py-3">
                         <span
                           className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${
-                            ipo.marketStatus === 'Open'
+                            currentMarketStatus === 'Open'
                               ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                              : currentMarketStatus === 'Closed'
+                              ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
                               : 'bg-slate-700/50 text-slate-300'
                           }`}
                         >
-                          {ipo.marketStatus === 'Open' ? (
+                          {currentMarketStatus === 'Open' ? (
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
                           ) : (
                             <Clock size={11} />
                           )}
-                          {ipo.marketStatus || 'Upcoming'}
+                          {currentMarketStatus}
                         </span>
                       </td>
                       <td className="num px-3 py-3">{inr(ipo.issuePrice)}</td>

@@ -1,4 +1,5 @@
 import { listIpos, createIpo, updateIpo, findIpoByName, appendGmpHistory } from './ipoStore.js';
+import { determineMarketStatus } from '../utils/calculations.js';
 
 export interface ScrapedIpo {
   name: string;
@@ -104,26 +105,7 @@ export async function fetchLiveMarketIpos(): Promise<ScrapedIpo[]> {
     const gmp = parseFloat(cleanGmp) || 0;
 
     // Market status based on dates
-    let marketStatus = 'Upcoming';
-    if (dates) {
-      const now = new Date();
-      const currentYear = now.getFullYear();
-      const parts = dates.split('-');
-      if (parts.length >= 2) {
-        const startStr = `${parts[0].trim()} ${currentYear}`;
-        const endStr = `${parts[1].trim()} ${currentYear}`;
-        const startDate = new Date(startStr);
-        const endDate = new Date(endStr);
-        if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
-          endDate.setHours(23, 59, 59, 999);
-          if (now >= startDate && now <= endDate) {
-            marketStatus = 'Open';
-          } else if (now > endDate) {
-            marketStatus = 'Closed';
-          }
-        }
-      }
-    }
+    const marketStatus = determineMarketStatus(dates, null, 'Upcoming');
 
     result.push({
       name: cleanName,

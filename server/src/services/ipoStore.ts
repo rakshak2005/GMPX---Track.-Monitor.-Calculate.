@@ -1,6 +1,7 @@
 // Storage abstraction backed by Neon PostgreSQL with automatic past-listing cleanup.
 import crypto from 'node:crypto';
 import { query, isNeonConnected } from '../config/db.js';
+import { determineMarketStatus } from '../utils/calculations.js';
 
 export interface IpoLean {
   id: string;
@@ -100,35 +101,38 @@ export async function listIpos(userId?: string): Promise<IpoLean[]> {
       ORDER BY i.created_at DESC
     `;
     const res = await query(sql, [userId || '00000000-0000-0000-0000-000000000000']);
-    return res.rows.map((r) => ({
-      id: r.id,
-      name: r.name,
-      companyName: r.companyName || '',
-      symbol: r.symbol || '',
-      logoUrl: r.logoUrl || '',
-      issuePrice: Number(r.issuePrice || 0),
-      lotSize: Number(r.lotSize || 15),
-      lotsApplied: Number(r.lotsApplied || 0),
-      allottedLots: r.allottedLots ? Number(r.allottedLots) : null,
-      openDate: r.openDate ? new Date(r.openDate).toISOString() : null,
-      closeDate: r.closeDate ? new Date(r.closeDate).toISOString() : null,
-      allotmentDate: r.allotmentDate ? new Date(r.allotmentDate).toISOString() : null,
-      listingDate: r.listingDate ? new Date(r.listingDate).toISOString() : null,
-      status: r.status || 'Available',
-      isApplied: Boolean(r.isApplied),
-      category: r.category || 'Mainboard',
-      marketStatus: r.marketStatus || 'Upcoming',
-      currentGmp: r.currentGmp !== null ? Number(r.currentGmp) : null,
-      prevGmp: r.prevGmp !== null ? Number(r.prevGmp) : null,
-      gmpTrend: r.gmpTrend || (r.prevGmp !== null && r.currentGmp !== null ? (Number(r.currentGmp) > Number(r.prevGmp) ? 'up' : Number(r.currentGmp) < Number(r.prevGmp) ? 'down' : 'neutral') : null),
-      lastGmpAt: r.lastGmpAt ? new Date(r.lastGmpAt).toISOString() : null,
-      gmpSource: r.gmpSource || 'IPOWatch Live',
-      gmpStale: Boolean(r.gmpStale),
-      actualListingPrice: r.actualListingPrice ? Number(r.actualListingPrice) : null,
-      notes: r.notes || '',
-      createdAt: r.createdAt ? new Date(r.createdAt).toISOString() : undefined,
-      updatedAt: r.updatedAt ? new Date(r.updatedAt).toISOString() : undefined,
-    }));
+    return res.rows.map((r) => {
+      const resolvedMarketStatus = determineMarketStatus(null, r.notes, r.marketStatus || 'Upcoming');
+      return {
+        id: r.id,
+        name: r.name,
+        companyName: r.companyName || '',
+        symbol: r.symbol || '',
+        logoUrl: r.logoUrl || '',
+        issuePrice: Number(r.issuePrice || 0),
+        lotSize: Number(r.lotSize || 15),
+        lotsApplied: Number(r.lotsApplied || 0),
+        allottedLots: r.allottedLots ? Number(r.allottedLots) : null,
+        openDate: r.openDate ? new Date(r.openDate).toISOString() : null,
+        closeDate: r.closeDate ? new Date(r.closeDate).toISOString() : null,
+        allotmentDate: r.allotmentDate ? new Date(r.allotmentDate).toISOString() : null,
+        listingDate: r.listingDate ? new Date(r.listingDate).toISOString() : null,
+        status: r.status || 'Available',
+        isApplied: Boolean(r.isApplied),
+        category: r.category || 'Mainboard',
+        marketStatus: resolvedMarketStatus,
+        currentGmp: r.currentGmp !== null ? Number(r.currentGmp) : null,
+        prevGmp: r.prevGmp !== null ? Number(r.prevGmp) : null,
+        gmpTrend: r.gmpTrend || (r.prevGmp !== null && r.currentGmp !== null ? (Number(r.currentGmp) > Number(r.prevGmp) ? 'up' : Number(r.currentGmp) < Number(r.prevGmp) ? 'down' : 'neutral') : null),
+        lastGmpAt: r.lastGmpAt ? new Date(r.lastGmpAt).toISOString() : null,
+        gmpSource: r.gmpSource || 'IPOWatch Live',
+        gmpStale: Boolean(r.gmpStale),
+        actualListingPrice: r.actualListingPrice ? Number(r.actualListingPrice) : null,
+        notes: r.notes || '',
+        createdAt: r.createdAt ? new Date(r.createdAt).toISOString() : undefined,
+        updatedAt: r.updatedAt ? new Date(r.updatedAt).toISOString() : undefined,
+      };
+    });
   }
 
   const list: IpoLean[] = [];
@@ -137,6 +141,7 @@ export async function listIpos(userId?: string): Promise<IpoLean[]> {
     const userBid = userMap?.get(i.id);
     list.push({
       ...i,
+      marketStatus: determineMarketStatus(null, i.notes, i.marketStatus || 'Upcoming'),
       lotsApplied: userBid ? userBid.lotsApplied : 0,
       status: userBid ? userBid.status : 'Available',
       isApplied: Boolean(userBid),

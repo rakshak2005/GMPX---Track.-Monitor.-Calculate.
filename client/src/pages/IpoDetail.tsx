@@ -10,7 +10,7 @@ import { Countdown } from '../components/Countdown.js';
 import { DeleteConfirmation, EditIpoModal } from '../components/IpoModals.js';
 import { Tooltip } from '../components/Tooltip.js';
 import { fmtDate, fmtTime, inr, money, pct, timeAgo } from '../utils/format.js';
-import { calculateEstimatedProfit } from '../utils/calculations.js';
+import { calculateEstimatedProfit, determineMarketStatus } from '../utils/calculations.js';
 import type { Ipo } from '../types/ipo.js';
 
 const STATUSES = ['Applied', 'Allotment Pending', 'Allotted', 'Not Allotted', 'Refund Pending', 'Listed', 'Sold'];
@@ -101,8 +101,24 @@ export function IpoDetail() {
         <div>
           <h1 className="text-2xl font-black">{ipo.name}</h1>
           <div className="mt-1 text-sm text-slate-400">{ipo.companyName || 'IPO Tracking'} · Listing {fmtDate(ipo.listingDate)}</div>
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="mt-2 flex flex-wrap items-center gap-2">
             <StatusBadge status={ipo.status} />
+            {(() => {
+              const mStatus = determineMarketStatus(null, ipo.notes, ipo.marketStatus);
+              return (
+                <span
+                  className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${
+                    mStatus === 'Open'
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                      : mStatus === 'Closed'
+                      ? 'bg-rose-500/20 text-rose-300 border-rose-500/30'
+                      : 'bg-slate-700/50 text-slate-300 border-white/10'
+                  }`}
+                >
+                  {mStatus}
+                </span>
+              );
+            })()}
             <Countdown target={ipo.closeDate} prefix="closes in" />
             <Countdown target={ipo.listingDate} prefix="listing in" />
           </div>
