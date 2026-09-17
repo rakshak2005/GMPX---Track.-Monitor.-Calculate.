@@ -15,6 +15,22 @@ export async function getDbPool(): Promise<pg.Pool> {
   if (pool) return pool;
 
   const connStr = env.DATABASE_URL;
+
+  // On Render / Linux cloud environments, standard pg connectionString works natively.
+  // We only need custom net.stream DNS pre-resolution if running on Windows / local ISP DNS blocks.
+  const isWindows = process.platform === 'win32';
+
+  if (!isWindows) {
+    pool = new Pool({
+      connectionString: connStr,
+      ssl: { rejectUnauthorized: false },
+      max: 10,
+      idleTimeoutMillis: 30000,
+    });
+    return pool;
+  }
+
+  // Windows / local DNS fallback
   const parsed = new URL(connStr);
   const host = parsed.hostname;
   const port = parseInt(parsed.port || '5432', 10);
