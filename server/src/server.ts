@@ -16,7 +16,24 @@ async function main(): Promise<void> {
   await connectDb();
 
   const app = express();
-  app.use(cors({ origin: env.CLIENT_URL === '*' ? true : env.CLIENT_URL }));
+  app.use(
+    cors({
+      origin: (origin, callback) => {
+        // Allow requests with no origin (e.g. mobile apps, curl, or same-origin)
+        if (!origin) return callback(null, true);
+        if (
+          env.CLIENT_URL === '*' ||
+          origin === env.CLIENT_URL ||
+          origin.endsWith('.vercel.app') ||
+          origin.includes('localhost')
+        ) {
+          return callback(null, true);
+        }
+        return callback(null, true); // Permissive CORS for public API dashboard
+      },
+      credentials: true,
+    })
+  );
   app.use(express.json({ limit: '1mb' }));
   app.use(optionalAuth);
 
