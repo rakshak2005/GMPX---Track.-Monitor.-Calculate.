@@ -49,10 +49,15 @@ export const api = {
     req<import('../types/ipo.js').Ipo>(`/api/ipos/${id}/subscription`, { method: 'PUT', body: JSON.stringify(payload) }),
   gmp: (id: string) =>
     req<{ gmp: number | null; gmpPct: number | null; estListing: number | null; estProfit: number | null; previousGmp: number | null; change: number | null; change24h: number | null; source: string | null; lastUpdated: string | null; stale: boolean }>(`/api/ipos/${id}/gmp`),
-  gmpHistory: (id: string, range = 'ALL') =>
-    req<{ data: import('../types/ipo.js').GmpPoint[]; stats: import('../types/ipo.js').GmpStats | null }>(
-      `/api/ipos/${id}/gmp/history?range=${range}`
-    ),
+  gmpHistory: async (id: string, range = 'ALL') => {
+    const token = getAuthToken();
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const res = await fetch(`${BASE}/api/ipos/${id}/gmp/history?range=${range}`, { headers });
+    if (!res.ok) throw new Error('History request failed');
+    const json = await res.json();
+    return json as { data: import('../types/ipo.js').GmpPoint[]; stats: import('../types/ipo.js').GmpStats | null };
+  },
   subHistory: (id: string) =>
     req<{ retail?: number | null; nii?: number | null; qib?: number | null; employee?: number | null; total?: number | null; label?: string; timestamp: string }[]>(`/api/ipos/${id}/subscription/history`),
   summary: () => req<import('../types/ipo.js').Summary>('/api/dashboard/summary'),
