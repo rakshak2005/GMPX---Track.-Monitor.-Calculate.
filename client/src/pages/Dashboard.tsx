@@ -12,16 +12,16 @@ import type { Ipo } from '../types/ipo.js';
 
 export function EmptyState({ onAdd }: { onAdd: () => void }) {
   return (
-    <div className="glass mx-auto max-w-xl p-8 text-center">
-      <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-400">
-        <Sparkles size={24} />
+    <div className="glass mx-auto max-w-xl p-5 sm:p-8 text-center">
+      <div className="mx-auto mb-2.5 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-400">
+        <Sparkles size={20} className="sm:w-6 sm:h-6" />
       </div>
-      <h2 className="text-lg font-bold">No IPOs Applied Yet</h2>
-      <p className="mt-1 text-sm text-slate-400">
-        Browse the <span className="font-semibold text-slate-200">Available & Upcoming IPOs</span> below and click{' '}
+      <h2 className="text-base sm:text-lg font-bold text-white">No IPOs Applied Yet</h2>
+      <p className="mt-1 text-xs sm:text-sm text-slate-400 max-w-md mx-auto">
+        Browse the <span className="font-semibold text-slate-200">Available & Upcoming IPOs</span> below and tap{' '}
         <span className="text-emerald-400 font-semibold">&quot;+ Mark Applied&quot;</span> to track your bids, capital, and profit.
       </p>
-      <button onClick={onAdd} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2 text-xs font-semibold text-slate-200 hover:bg-white/20">
+      <button onClick={onAdd} className="mt-3 sm:mt-4 inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-3.5 py-2 text-xs font-semibold text-slate-200 hover:bg-white/20 active:scale-95 transition">
         <Plus size={14} /> Add Custom / Unlisted IPO
       </button>
     </div>
@@ -231,9 +231,9 @@ export function Dashboard({ onAdd }: { onAdd: () => void }) {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-black tracking-tight md:text-3xl">IPO COMMAND CENTER</h1>
-          <p className="mt-1 text-sm text-slate-400">Live Indian IPO Grey Market Premium &amp; Portfolio Tracker</p>
-          <div className="mt-2">
+          <h1 className="hidden sm:block text-2xl font-black tracking-tight md:text-3xl">IPO COMMAND CENTER</h1>
+          <p className="hidden sm:block mt-1 text-sm text-slate-400">Live Indian IPO Grey Market Premium &amp; Portfolio Tracker</p>
+          <div className="mt-1 sm:mt-2">
             <LiveIndicator lastUpdate={s?.lastUpdate ?? null} nextUpdate={s?.nextUpdate ?? null} demoMode={s?.demoMode} />
           </div>
         </div>
@@ -241,15 +241,15 @@ export function Dashboard({ onAdd }: { onAdd: () => void }) {
           <button
             onClick={handleSync}
             disabled={syncLive.isPending}
-            className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-white/10 transition disabled:opacity-50"
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-white/10 transition disabled:opacity-50"
             title="Fetch latest open & upcoming IPOs and GMP now"
           >
             <RefreshCw size={14} className={syncLive.isPending ? 'animate-spin text-blue-400' : ''} />
-            {syncLive.isPending ? 'Syncing Market…' : 'Sync Live Market'}
+            {syncLive.isPending ? 'Syncing…' : 'Sync Live Market'}
           </button>
           <button
             onClick={onAdd}
-            className="inline-flex items-center gap-2 rounded-xl bg-blue-500 px-3.5 py-2 text-xs font-semibold text-white hover:bg-blue-600 transition"
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl bg-blue-500 px-3.5 py-2 text-xs font-semibold text-white hover:bg-blue-600 transition"
           >
             <Plus size={14} /> Add IPO
           </button>
@@ -314,24 +314,24 @@ export function Dashboard({ onAdd }: { onAdd: () => void }) {
 
       {/* SECTION 2: LIVE AVAILABLE & UPCOMING IPOS */}
       <div className="space-y-3 pt-4">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between sm:justify-start gap-2">
               <h2 className="text-sm font-bold tracking-widest text-emerald-400">AVAILABLE &amp; UPCOMING IPOS</h2>
               <span className="flex items-center gap-1 text-[11px] font-medium text-slate-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" /> Live Market Scrape
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" /> Live Market
               </span>
             </div>
-            <p className="text-xs text-slate-400">All open and upcoming Mainboard issues. Click &quot;+ Mark Applied&quot; to track in your portfolio.</p>
+            <p className="text-xs text-slate-400 mt-0.5">All open and upcoming Mainboard issues. Tap &quot;+ Mark Applied&quot; to track in your portfolio.</p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            <div className="inline-flex rounded-lg bg-white/5 p-0.5 overflow-x-auto max-w-full">
+          <div className="flex items-center gap-2 text-xs overflow-x-auto no-scrollbar pb-0.5">
+            <div className="inline-flex rounded-xl bg-white/5 p-1 shrink-0 border border-white/5">
               {(['All', 'Open', 'Upcoming', 'Closed'] as const).map((m) => (
                 <button
                   key={m}
                   onClick={() => setFilterMarket(m)}
-                  className={`rounded-md px-2.5 py-1 font-medium whitespace-nowrap transition ${
+                  className={`rounded-lg px-3 py-1 font-semibold whitespace-nowrap transition ${
                     filterMarket === m ? 'bg-blue-500 text-white shadow' : 'text-slate-400 hover:text-white'
                   }`}
                 >
@@ -339,9 +339,9 @@ export function Dashboard({ onAdd }: { onAdd: () => void }) {
                 </button>
               ))}
             </div>
-            <div className="inline-flex items-center rounded-lg bg-blue-500/20 px-2.5 py-1 font-semibold text-blue-300">
-              Mainboard Only
-            </div>
+            <span className="shrink-0 inline-flex items-center rounded-xl bg-blue-500/15 border border-blue-500/25 px-2.5 py-1 text-[11px] font-semibold text-blue-300">
+              Mainboard
+            </span>
           </div>
         </div>
 

@@ -182,21 +182,23 @@ export function MobileAvailableIpoCard({
   const estimatedLotProfit = ipo.currentGmp != null ? ipo.currentGmp * (ipo.lotSize || 15) : null;
 
   return (
-    <div className="glass p-4 transition hover:border-white/20 space-y-3">
+    <div className="glass p-3.5 sm:p-4 transition hover:border-white/20 space-y-3">
       <div className="flex items-start justify-between gap-2">
         <Link to={`/ipo/${ipo.id}`} className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-white text-base hover:text-blue-400 truncate">{ipo.name}</span>
-            <span className="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-blue-400/20 text-blue-300 shrink-0">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="font-bold text-white text-sm sm:text-base hover:text-blue-400 break-words leading-tight">
+              {ipo.name}
+            </span>
+            <span className="rounded px-1.5 py-0.5 text-[9px] font-semibold bg-blue-400/20 text-blue-300 shrink-0">
               {ipo.category || 'Mainboard'}
             </span>
           </div>
-          <div className="mt-0.5 text-xs text-slate-400">
-            Price: <strong className="text-slate-200 num">{inr(ipo.issuePrice)}</strong> · Lot: <strong className="text-slate-200 num">{ipo.lotSize || 15}</strong> shares
+          <div className="mt-1 text-xs text-slate-400">
+            Price: <strong className="text-slate-200 num">{inr(ipo.issuePrice)}</strong> · Lot: <strong className="text-slate-200 num">{ipo.lotSize || 15}</strong> sh
           </div>
         </Link>
         <span
-          className={`shrink-0 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
+          className={`shrink-0 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
             currentMarketStatus === 'Open'
               ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
               : currentMarketStatus === 'Closed'
@@ -211,39 +213,39 @@ export function MobileAvailableIpoCard({
         </span>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 rounded-xl bg-white/[0.03] border border-white/5 p-2.5 text-xs">
-        <div>
-          <div className="card-label text-[10px]">LIVE GMP</div>
-          <div className="flex items-center gap-1 mt-0.5">
-            <span className={`num font-bold text-sm ${gmpPos ? 'text-emerald-400' : 'text-red-400'}`}>
+      <div className="grid grid-cols-3 gap-1.5 sm:gap-2 rounded-xl bg-white/[0.03] border border-white/5 p-2 sm:p-2.5 text-xs">
+        <div className="min-w-0">
+          <div className="card-label text-[9px] sm:text-[10px] truncate">LIVE GMP</div>
+          <div className="flex items-center gap-0.5 sm:gap-1 mt-0.5">
+            <span className={`num font-bold text-xs sm:text-sm truncate ${gmpPos ? 'text-emerald-400' : 'text-red-400'}`}>
               {ipo.currentGmp != null ? money(ipo.currentGmp) : '₹0'}
             </span>
             {ipo.gmpTrend === 'up' || (ipo.prevGmp != null && (ipo.currentGmp ?? 0) > ipo.prevGmp) ? (
-              <span className="inline-flex items-center text-[10px] font-extrabold text-emerald-400">
+              <span className="inline-flex items-center text-[10px] font-extrabold text-emerald-400 shrink-0">
                 <ArrowUp size={10} className="stroke-[3]" />
               </span>
             ) : ipo.gmpTrend === 'down' || (ipo.prevGmp != null && (ipo.currentGmp ?? 0) < ipo.prevGmp) ? (
-              <span className="inline-flex items-center text-[10px] font-extrabold text-red-400">
+              <span className="inline-flex items-center text-[10px] font-extrabold text-red-400 shrink-0">
                 <ArrowDown size={10} className="stroke-[3]" />
               </span>
             ) : null}
           </div>
           {ipo.gmpPct != null && (
-            <div className="text-[10px] text-slate-400 num">{pct(ipo.gmpPct)}</div>
+            <div className="text-[10px] text-slate-400 num truncate">{pct(ipo.gmpPct)}</div>
           )}
         </div>
 
-        <div>
-          <div className="card-label text-[10px]">EST. LISTING</div>
-          <div className="num font-semibold text-slate-200 text-sm mt-0.5">
+        <div className="min-w-0">
+          <div className="card-label text-[9px] sm:text-[10px] truncate">EST. LISTING</div>
+          <div className="num font-semibold text-slate-200 text-xs sm:text-sm mt-0.5 truncate">
             {ipo.estListing != null ? inr(ipo.estListing) : '—'}
           </div>
         </div>
 
-        <div>
-          <div className="card-label text-[10px]">PROFIT / LOT</div>
+        <div className="min-w-0">
+          <div className="card-label text-[9px] sm:text-[10px] truncate">PROFIT / LOT</div>
           <div
-            className={`num font-bold text-sm mt-0.5 ${
+            className={`num font-bold text-xs sm:text-sm mt-0.5 truncate ${
               (estimatedLotProfit ?? 0) > 0
                 ? 'text-emerald-300'
                 : (estimatedLotProfit ?? 0) < 0
@@ -256,19 +258,19 @@ export function MobileAvailableIpoCard({
         </div>
       </div>
 
-      <div className="flex items-center justify-between pt-1">
-        <div className="text-[11px] text-slate-400 truncate max-w-[50%]">
+      <div className="flex items-center justify-between gap-2 pt-0.5">
+        <div className="text-[11px] text-slate-400 truncate flex-1">
           {ipo.notes ? ipo.notes.replace(/^Bidding:\s*/i, '') : 'Dates TBA'}
         </div>
-        <div>
+        <div className="shrink-0">
           {isApplied ? (
-            <div className="inline-flex items-center gap-1.5">
-              <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-500/20 px-2.5 py-1 text-xs font-semibold text-emerald-300 border border-emerald-500/30">
+            <div className="inline-flex items-center gap-1">
+              <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-500/20 px-2.5 py-1 text-[11px] font-semibold text-emerald-300 border border-emerald-500/30">
                 Applied ({ipo.lotsApplied}L)
               </span>
               <button
                 onClick={(e) => onUnapply(ipo, e)}
-                className="text-[11px] text-slate-400 hover:text-red-400 underline transition p-1"
+                className="text-[11px] text-slate-400 hover:text-red-400 underline transition px-1 py-1"
               >
                 Remove
               </button>
@@ -276,7 +278,7 @@ export function MobileAvailableIpoCard({
           ) : (
             <button
               onClick={() => onApply(ipo)}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 px-3 py-1.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-500 hover:text-white active:scale-95 transition"
+              className="inline-flex items-center gap-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 px-3 py-1.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-500 hover:text-white active:scale-95 transition whitespace-nowrap"
             >
               + Mark Applied
             </button>
