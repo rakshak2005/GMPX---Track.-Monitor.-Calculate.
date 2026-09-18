@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { api, getAuthToken, setAuthToken } from '../services/api.js';
 
 export interface User {
@@ -26,6 +27,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const qc = useQueryClient();
 
   useEffect(() => {
     const token = getAuthToken();
@@ -42,22 +44,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .finally(() => setLoading(false));
   }, []);
 
+  const refreshAllQueries = async () => {
+    await qc.invalidateQueries();
+    await Promise.all([
+      qc.refetchQueries({ queryKey: ['ipos'] }),
+      qc.refetchQueries({ queryKey: ['summary'] }),
+    ]);
+  };
+
   const login = async (email: string, pass: string) => {
     const res = await api.login({ email, password: pass });
     setAuthToken(res.token);
     setUser(res.user);
+    await refreshAllQueries();
   };
 
   const register = async (email: string, pass: string, name?: string) => {
     const res = await api.register({ email, password: pass, name });
     setAuthToken(res.token);
     setUser(res.user);
+    await refreshAllQueries();
   };
 
   const logout = () => {
     setAuthToken(null);
     setUser(null);
-    window.location.reload();
+    refreshAllQueries();
   };
 
   const updatePreferences = async (prefs: Partial<User['preferences']>) => {

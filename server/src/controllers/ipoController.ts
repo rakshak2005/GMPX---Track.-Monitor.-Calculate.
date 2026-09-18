@@ -71,6 +71,9 @@ export const applyIpoHandler = wrap(async (req: any, res) => {
   const { setUserIpoApplication } = await import('../services/ipoStore.js');
   await setUserIpoApplication(userId, req.params.id, Boolean(applied), Number(lotsApplied) || 1, issuePrice ? Number(issuePrice) : undefined);
 
+  const { broadcastUpdate } = await import('../services/sseService.js');
+  broadcastUpdate('all');
+
   const updated = await getIpo(req.params.id, req.userId);
   res.json({ data: { ...updated!, ...derived(updated as unknown as Record<string, unknown>) } });
 });
@@ -78,6 +81,8 @@ export const applyIpoHandler = wrap(async (req: any, res) => {
 export const syncLiveHandler = wrap(async (_req, res) => {
   const { syncLiveIpos } = await import('../services/scraperService.js');
   const result = await syncLiveIpos();
+  const { broadcastUpdate } = await import('../services/sseService.js');
+  broadcastUpdate('all');
   res.json({ data: result });
 });
 

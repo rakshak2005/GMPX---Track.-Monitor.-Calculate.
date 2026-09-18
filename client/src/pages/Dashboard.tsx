@@ -10,7 +10,7 @@ import { inr, money, pct, timeAgo } from '../utils/format.js';
 import { determineMarketStatus } from '../utils/calculations.js';
 import type { Ipo } from '../types/ipo.js';
 
-export function EmptyState({ onAdd }: { onAdd: () => void }) {
+export function EmptyState() {
   return (
     <div className="glass mx-auto max-w-xl p-5 sm:p-8 text-center">
       <div className="mx-auto mb-2.5 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-400">
@@ -21,9 +21,6 @@ export function EmptyState({ onAdd }: { onAdd: () => void }) {
         Browse the <span className="font-semibold text-slate-200">Available & Upcoming IPOs</span> below and tap{' '}
         <span className="text-emerald-400 font-semibold">&quot;+ Mark Applied&quot;</span> to track your bids, capital, and profit.
       </p>
-      <button onClick={onAdd} className="mt-3 sm:mt-4 inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-3.5 py-2 text-xs font-semibold text-slate-200 hover:bg-white/20 active:scale-95 transition">
-        <Plus size={14} /> Add Custom / Unlisted IPO
-      </button>
     </div>
   );
 }
@@ -126,7 +123,7 @@ function ApplyQuickModal({
 
 import { useAuth } from '../hooks/useAuth.js';
 
-export function Dashboard({ onAdd }: { onAdd: () => void }) {
+export function Dashboard({ onAdd }: { onAdd?: () => void }) {
   const { user, updatePreferences } = useAuth();
   const summary = useSummary();
   const ipos = useIpos();
@@ -237,21 +234,15 @@ export function Dashboard({ onAdd }: { onAdd: () => void }) {
             <LiveIndicator lastUpdate={s?.lastUpdate ?? null} nextUpdate={s?.nextUpdate ?? null} demoMode={s?.demoMode} />
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center">
           <button
             onClick={handleSync}
             disabled={syncLive.isPending}
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-white/10 transition disabled:opacity-50"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-xs font-semibold text-slate-300 hover:bg-white/10 active:scale-95 transition disabled:opacity-50"
             title="Fetch latest open & upcoming IPOs and GMP now"
           >
             <RefreshCw size={14} className={syncLive.isPending ? 'animate-spin text-blue-400' : ''} />
             {syncLive.isPending ? 'Syncing…' : 'Sync Live Market'}
-          </button>
-          <button
-            onClick={onAdd}
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl bg-blue-500 px-3.5 py-2 text-xs font-semibold text-white hover:bg-blue-600 transition"
-          >
-            <Plus size={14} /> Add IPO
           </button>
         </div>
       </div>
@@ -297,7 +288,7 @@ export function Dashboard({ onAdd }: { onAdd: () => void }) {
         </div>
 
         {appliedRows.length === 0 && !loading ? (
-          <EmptyState onAdd={onAdd} />
+          <EmptyState />
         ) : (
           <>
             <div className="hidden md:block">

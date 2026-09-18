@@ -9,12 +9,20 @@ import { CalendarPage } from './pages/CalendarPage.js';
 import { IpoDetail } from './pages/IpoDetail.js';
 import { SettingsPage } from './pages/SettingsPage.js';
 import { AddIpoModal } from './components/IpoModals.js';
-import { useIpoMutations } from './hooks/useIpos.js';
+import { useIpoMutations, useRealtimeSync } from './hooks/useIpos.js';
 import { pushToast } from './hooks/useAlerts.js';
 
-const qc = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } } });
+const qc = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: true,
+    },
+  },
+});
 
 function Shell() {
+  useRealtimeSync();
   const [addOpen, setAddOpen] = useState(false);
   const { create } = useIpoMutations();
   return (

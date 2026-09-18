@@ -40,7 +40,7 @@ export function Toasts() {
   );
 }
 
-export function AppLayout({ onAdd }: { onAdd: () => void }) {
+export function AppLayout({ onAdd }: { onAdd?: () => void }) {
   const { user, logout } = useAuth();
   const [authOpen, setAuthOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -92,12 +92,9 @@ export function AppLayout({ onAdd }: { onAdd: () => void }) {
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-violet-600 font-black">G</span>
           <div>
             <div className="text-sm font-bold">IPO Command Center</div>
-            <div className="text-[11px] text-slate-500">GMPulse · Personal</div>
+            <div className="text-[11px] text-slate-500">GMPulse · Automated Tracker</div>
           </div>
         </div>
-        <button onClick={onAdd} className="mt-5 flex items-center justify-center gap-2 rounded-xl bg-blue-500/90 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-500 transition">
-          <Plus size={16} /> Add IPO
-        </button>
         <nav className="mt-6 space-y-1">
           {NAV.map((n) => (
             <NavLink
@@ -156,7 +153,7 @@ export function AppLayout({ onAdd }: { onAdd: () => void }) {
           to="/"
           end
           className={({ isActive }) =>
-            `flex flex-col items-center gap-0.5 rounded-lg px-2 py-1 text-[10px] min-w-[50px] transition ${
+            `flex flex-col items-center gap-0.5 rounded-lg px-2.5 py-1 text-[10px] min-w-[50px] transition ${
               isActive ? 'text-blue-400 font-semibold' : 'text-slate-400 hover:text-slate-200'
             }`
           }
@@ -168,7 +165,7 @@ export function AppLayout({ onAdd }: { onAdd: () => void }) {
         <NavLink
           to="/ipos"
           className={({ isActive }) =>
-            `flex flex-col items-center gap-0.5 rounded-lg px-2 py-1 text-[10px] min-w-[50px] transition ${
+            `flex flex-col items-center gap-0.5 rounded-lg px-2.5 py-1 text-[10px] min-w-[50px] transition ${
               isActive ? 'text-blue-400 font-semibold' : 'text-slate-400 hover:text-slate-200'
             }`
           }
@@ -177,19 +174,10 @@ export function AppLayout({ onAdd }: { onAdd: () => void }) {
           <span>My IPOs</span>
         </NavLink>
 
-        {/* Center Prominent Add Button */}
-        <button
-          onClick={onAdd}
-          aria-label="Add IPO"
-          className="flex h-11 w-11 -mt-4 items-center justify-center rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 text-white shadow-lg shadow-blue-500/30 border-2 border-[#070b18] active:scale-95 transition"
-        >
-          <Plus size={22} className="stroke-[2.5]" />
-        </button>
-
         <NavLink
           to="/gmp"
           className={({ isActive }) =>
-            `flex flex-col items-center gap-0.5 rounded-lg px-2 py-1 text-[10px] min-w-[50px] transition ${
+            `flex flex-col items-center gap-0.5 rounded-lg px-2.5 py-1 text-[10px] min-w-[50px] transition ${
               isActive ? 'text-blue-400 font-semibold' : 'text-slate-400 hover:text-slate-200'
             }`
           }
@@ -198,9 +186,21 @@ export function AppLayout({ onAdd }: { onAdd: () => void }) {
           <span>GMP</span>
         </NavLink>
 
+        <NavLink
+          to="/calendar"
+          className={({ isActive }) =>
+            `flex flex-col items-center gap-0.5 rounded-lg px-2.5 py-1 text-[10px] min-w-[50px] transition ${
+              isActive ? 'text-blue-400 font-semibold' : 'text-slate-400 hover:text-slate-200'
+            }`
+          }
+        >
+          <CalendarDays size={20} />
+          <span>Calendar</span>
+        </NavLink>
+
         <button
           onClick={() => setMobileMenuOpen(true)}
-          className={`flex flex-col items-center gap-0.5 rounded-lg px-2 py-1 text-[10px] min-w-[50px] transition ${
+          className={`flex flex-col items-center gap-0.5 rounded-lg px-2.5 py-1 text-[10px] min-w-[50px] transition ${
             mobileMenuOpen ? 'text-blue-400 font-semibold' : 'text-slate-400 hover:text-slate-200'
           }`}
         >

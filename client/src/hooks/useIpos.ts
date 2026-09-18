@@ -2,18 +2,81 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { api } from '../services/api.js';
 
-export const POLL_MS = 300_000; // 5 minutes
+export const POLL_MS = 60_000; // 1 minute fallback
+
+// Real-time synchronization hook using Server-Sent Events (SSE)
+export function useRealtimeSync() {
+  const qc = useQueryClient();
+
+  useEffect(() => {
+    let es: EventSource | null = null;
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
+
+    function connect() {
+      try {
+        es = new EventSource('/api/events');
+
+        es.onmessage = (event) => {
+          try {
+            const parsed = JSON.parse(event.data);
+            if (parsed.type === 'all' || parsed.type === 'ipos' || parsed.type === 'summary') {
+              qc.invalidateQueries({ queryKey: ['ipos'] });
+              qc.invalidateQueries({ queryKey: ['summary'] });
+            }
+          } catch {
+            // ignore heartbeat/malformed events
+          }
+        };
+
+        es.onerror = () => {
+          if (es) {
+            es.close();
+            es = null;
+          }
+          retryTimer = setTimeout(connect, 5000);
+        };
+      } catch {
+        retryTimer = setTimeout(connect, 5000);
+      }
+    }
+
+    connect();
+
+    return () => {
+      if (es) es.close();
+      if (retryTimer) clearTimeout(retryTimer);
+    };
+  }, [qc]);
+}
 
 export function useIpos(params = '') {
-  return useQuery({ queryKey: ['ipos', params], queryFn: () => api.listIpos(params), refetchInterval: POLL_MS, staleTime: 60_000 });
+  return useQuery({
+    queryKey: ['ipos', params],
+    queryFn: () => api.listIpos(params),
+    refetchInterval: POLL_MS,
+    staleTime: 10_000,
+    refetchOnWindowFocus: true,
+  });
 }
 
 export function useIpo(id: string | undefined) {
-  return useQuery({ queryKey: ['ipo', id], queryFn: () => api.getIpo(id!), enabled: !!id, refetchInterval: POLL_MS });
+  return useQuery({
+    queryKey: ['ipo', id],
+    queryFn: () => api.getIpo(id!),
+    enabled: !!id,
+    refetchInterval: POLL_MS,
+    staleTime: 10_000,
+  });
 }
 
 export function useSummary() {
-  return useQuery({ queryKey: ['summary'], queryFn: api.summary, refetchInterval: POLL_MS, staleTime: 30_000 });
+  return useQuery({
+    queryKey: ['summary'],
+    queryFn: api.summary,
+    refetchInterval: POLL_MS,
+    staleTime: 10_000,
+    refetchOnWindowFocus: true,
+  });
 }
 
 export function useGmpHistory(id: string | undefined, range: string) {

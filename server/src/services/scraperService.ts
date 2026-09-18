@@ -242,5 +242,13 @@ export async function syncLiveIpos(): Promise<{ totalScraped: number; created: n
   }
 
   console.log(`[scraper] Live Mainboard IPO sync complete: ${totalScraped} scraped, ${created} created, ${updated} updated.`);
+  if (created > 0 || updated > 0) {
+    try {
+      const { broadcastUpdate } = await import('./sseService.js');
+      broadcastUpdate('all');
+    } catch {
+      // ignore
+    }
+  }
   return { totalScraped, created, updated, errors };
 }
