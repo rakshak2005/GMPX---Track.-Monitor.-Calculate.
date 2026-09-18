@@ -138,10 +138,12 @@ async function initSchema(): Promise<void> {
       last_gmp_at TIMESTAMPTZ,
       gmp_source VARCHAR(100) DEFAULT 'IPOWatch Live',
       gmp_stale BOOLEAN DEFAULT FALSE,
+      subscription JSONB DEFAULT NULL,
       notes TEXT DEFAULT '',
       created_at TIMESTAMPTZ DEFAULT NOW(),
       updated_at TIMESTAMPTZ DEFAULT NOW()
     );
+
 
     CREATE TABLE IF NOT EXISTS user_ipos (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

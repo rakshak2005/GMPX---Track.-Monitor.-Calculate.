@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
-import { TrendingUp, TrendingDown, Minus, ArrowUpRight, ArrowDownRight, Sparkles } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, ArrowUpRight, ArrowDownRight, Sparkles, Clock, ArrowUpDown } from 'lucide-react';
+
 import { useIpos, useSummary } from '../hooks/useIpos.js';
 import { inr, money, pct, timeAgo } from '../utils/format.js';
 import { Sparkline } from '../components/Sparkline.js';
@@ -95,15 +96,29 @@ export function SubscriptionPage() {
 
   return (
     <div className="space-y-5">
-      <div className="border-b border-white/[0.07] pb-3">
-        <div className="flex items-center gap-2">
-          <h1 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">SUBSCRIPTION DESK</h1>
-          <span className="rounded bg-blue-500/15 border border-blue-500/30 px-2 py-0.5 text-[10px] font-bold text-blue-300">
-            DEMAND MONITOR
-          </span>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-white/[0.07] pb-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">SUBSCRIPTION DESK</h1>
+            <span className="rounded bg-blue-500/15 border border-blue-500/30 px-2 py-0.5 text-[10px] font-bold text-blue-300">
+              DEMAND MONITOR
+            </span>
+          </div>
+          <p className="text-xs text-slate-400 mt-1">Live institutional (QIB), HNI (NII), and retail demand progression</p>
         </div>
-        <p className="text-xs text-slate-400 mt-1">Live institutional (QIB), HNI (NII), and retail demand progression</p>
+
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-blue-500/10 border border-blue-500/20 text-blue-300 text-[11px] font-semibold">
+            <ArrowUpDown size={12} />
+            <span>Sorted: Highest to Lowest</span>
+          </div>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#101521] border border-white/10 text-slate-400 text-[11px]">
+            <Clock size={12} className="text-amber-400 animate-pulse" />
+            <span>Updates Every 3 Hours</span>
+          </div>
+        </div>
       </div>
+
 
       {isLoading ? (
         <div className="terminal-panel p-6"><div className="skeleton h-48 w-full" /></div>
@@ -113,15 +128,24 @@ export function SubscriptionPage() {
         </div>
       ) : (
         <div className="grid gap-3 lg:grid-cols-2">
-          {data.map((i) => {
+          {data
+            .slice()
+            .sort((a, b) => {
+              const aTot = a.subscription?.total ?? -1;
+              const bTot = b.subscription?.total ?? -1;
+              return bTot - aTot;
+            })
+            .map((i) => {
             const sub = i.subscription ?? {};
             const total = sub.total ?? 0;
-            const momentum =
-              total > 20
-                ? { text: 'Accelerating', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30' }
-                : total > 5
-                ? { text: 'Stable', color: 'text-blue-400 bg-blue-500/10 border-blue-500/30' }
-                : { text: 'Moderate', color: 'text-slate-400 bg-slate-500/10 border-slate-500/30' };
+            const hasData = sub.total !== null && sub.total !== undefined;
+            const momentum = !hasData
+              ? { text: 'Bidding Awaited', color: 'text-slate-400 bg-slate-500/10 border-slate-500/30' }
+              : total > 20
+              ? { text: 'Accelerating', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30' }
+              : total > 5
+              ? { text: 'High Demand', color: 'text-blue-400 bg-blue-500/10 border-blue-500/30' }
+              : { text: 'Subscribed', color: 'text-amber-400 bg-amber-500/10 border-amber-500/30' };
 
             const categories = [
               { label: 'Retail Individual', val: sub.retail, color: 'from-blue-500 to-indigo-500' },
@@ -149,6 +173,7 @@ export function SubscriptionPage() {
                     </span>
                   </div>
                 </div>
+
 
                 <div className="space-y-2 text-xs">
                   {categories.map((c) => (

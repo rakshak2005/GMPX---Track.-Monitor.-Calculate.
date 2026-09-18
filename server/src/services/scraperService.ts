@@ -23,8 +23,65 @@ function cleanNum(val: string | undefined | null): number {
   return parseFloat(cleaned) || 0;
 }
 
-async function fetchIpoGuruDetail(url: string | null): Promise<{ lotSize: number | null; listingDate: string | null }> {
-  if (!url) return { lotSize: null, listingDate: null };
+export interface SubscriptionData {
+  retail: number | null;
+  nii: number | null;
+  qib: number | null;
+  employee: number | null;
+  total: number | null;
+}
+
+async function fetchSubscriptionData(slug: string): Promise<SubscriptionData | null> {
+  if (!slug) return null;
+  try {
+    const subUrl = `https://www.ipoguru.in/ipo-subscription/${slug}`;
+    const res = await fetch(subUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+      },
+      signal: AbortSignal.timeout(6000),
+    });
+    if (!res.ok) return null;
+    const html = await res.text();
+    const trs = html.match(/<tr[\s\S]*?<\/tr>/gi) || [];
+
+    const sub: SubscriptionData = { retail: null, nii: null, qib: null, employee: null, total: null };
+    for (const tr of trs) {
+      const text = tr.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+      const timesMatch = text.match(/([0-9.]+)\s*x\b/i);
+      if (!timesMatch) continue;
+      const timesVal = parseFloat(timesMatch[1]);
+      if (!Number.isFinite(timesVal)) continue;
+
+      if (/retail/i.test(text) && !/max|date|shni/i.test(text) && sub.retail === null) {
+        sub.retail = timesVal;
+      } else if (/\bqib\b/i.test(text) && !/date/i.test(text) && sub.qib === null) {
+        sub.qib = timesVal;
+      } else if (/\bnii\b/i.test(text) && !/big|small|snii|bnii|date/i.test(text) && sub.nii === null) {
+        sub.nii = timesVal;
+      } else if (/employee/i.test(text) && sub.employee === null) {
+        sub.employee = timesVal;
+      } else if (/\btotal\b/i.test(text) && !/est/i.test(text) && sub.total === null) {
+        sub.total = timesVal;
+      }
+    }
+
+    if (sub.total !== null || sub.retail !== null || sub.qib !== null || sub.nii !== null) {
+      return sub;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchIpoGuruDetail(url: string | null): Promise<{
+  lotSize: number | null;
+  listingDate: string | null;
+  allotmentDate: string | null;
+  subscription: SubscriptionData | null;
+}> {
+  if (!url) return { lotSize: null, listingDate: null, allotmentDate: null, subscription: null };
   try {
     const res = await fetch(url, {
       headers: {
@@ -32,7 +89,7 @@ async function fetchIpoGuruDetail(url: string | null): Promise<{ lotSize: number
       },
       signal: AbortSignal.timeout(6000),
     });
-    if (!res.ok) return { lotSize: null, listingDate: null };
+    if (!res.ok) return { lotSize: null, listingDate: null, allotmentDate: null, subscription: null };
     const html = await res.text();
 
     // 1. Lot size from table or text
@@ -52,11 +109,27 @@ async function fetchIpoGuruDetail(url: string | null): Promise<{ lotSize: number
       listingDate = listingPropMatch[1];
     }
 
-    return { lotSize, listingDate };
+    // 3. Allotment date
+    let allotmentDate: string | null = null;
+    const allotmentPropMatch = html.match(/"name":\s*"Basis of Allotment",\s*"value":\s*"([^"]+)"/i) ||
+      html.match(/Basis\s+of\s+Allotment\s*<\/td>\s*<td[^>]*>([^<]+)<\/td>/i);
+    if (allotmentPropMatch) {
+      allotmentDate = allotmentPropMatch[1].trim();
+    }
+
+    // 4. Extract slug and fetch live subscription breakdown
+    let subscription: SubscriptionData | null = null;
+    const slugMatch = url.match(/\/ipo\/([a-z0-9-]+)/i);
+    if (slugMatch && slugMatch[1]) {
+      subscription = await fetchSubscriptionData(slugMatch[1]);
+    }
+
+    return { lotSize, listingDate, allotmentDate, subscription };
   } catch {
-    return { lotSize: null, listingDate: null };
+    return { lotSize: null, listingDate: null, allotmentDate: null, subscription: null };
   }
 }
+
 
 export async function fetchLiveMarketIpos(): Promise<ScrapedIpo[]> {
   const res = await fetch('https://www.ipoguru.in/live-ipo-gmp', {
@@ -162,10 +235,14 @@ export async function syncLiveIpos(): Promise<{ totalScraped: number; created: n
   for (const item of scraped) {
     let detailLot: number | null = null;
     let detailListingDate: string | null = null;
+    let detailAllotmentDate: string | null = null;
+    let detailSubscription: SubscriptionData | null = null;
     if (item.url) {
       const details = await fetchIpoGuruDetail(item.url);
       detailLot = details.lotSize;
       detailListingDate = details.listingDate;
+      detailAllotmentDate = details.allotmentDate;
+      detailSubscription = details.subscription;
     }
     if (!detailLot && item.issuePrice > 0) {
       detailLot = Math.max(1, Math.round(14500 / item.issuePrice));
@@ -202,6 +279,12 @@ export async function syncLiveIpos(): Promise<{ totalScraped: number; created: n
         if (detailListingDate) {
           patch.listingDate = detailListingDate;
         }
+        if (detailAllotmentDate) {
+          patch.allotmentDate = detailAllotmentDate;
+        }
+        if (detailSubscription) {
+          patch.subscription = detailSubscription;
+        }
         if (item.issuePrice > 0) {
           patch.issuePrice = item.issuePrice;
         }
@@ -223,6 +306,7 @@ export async function syncLiveIpos(): Promise<{ totalScraped: number; created: n
           marketStatus: item.marketStatus,
           notes: item.dates ? `Bidding: ${item.dates}` : '',
           listingDate: detailListingDate || undefined,
+          allotmentDate: detailAllotmentDate || undefined,
         });
         await updateIpo(newIpo.id, {
           currentGmp: item.gmp,
@@ -232,10 +316,13 @@ export async function syncLiveIpos(): Promise<{ totalScraped: number; created: n
           gmpStale: false,
           lotSize: targetLotSize,
           listingDate: detailListingDate || undefined,
+          allotmentDate: detailAllotmentDate || undefined,
+          subscription: detailSubscription || undefined,
         });
         await appendGmpHistory(newIpo.id, item.gmp, 'IPOGuru Live', now);
         created++;
       }
+
     } catch (e) {
       errors.push(`${item.name}: ${e instanceof Error ? e.message : String(e)}`);
     }

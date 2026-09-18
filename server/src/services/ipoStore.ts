@@ -90,6 +90,7 @@ export async function listIpos(userId?: string): Promise<IpoLean[]> {
         i.current_gmp as "currentGmp", i.prev_gmp as "prevGmp", i.gmp_trend as "gmpTrend",
         i.last_gmp_at as "lastGmpAt",
         i.gmp_source as "gmpSource", i.gmp_stale as "gmpStale",
+        i.subscription,
         i.notes, i.created_at as "createdAt", i.updated_at as "updatedAt",
         COALESCE(ui.lots_applied, 0) as "lotsApplied",
         COALESCE(ui.status, 'Available') as status,
@@ -127,12 +128,14 @@ export async function listIpos(userId?: string): Promise<IpoLean[]> {
         lastGmpAt: r.lastGmpAt ? new Date(r.lastGmpAt).toISOString() : null,
         gmpSource: r.gmpSource || 'IPOWatch Live',
         gmpStale: Boolean(r.gmpStale),
+        subscription: r.subscription || null,
         actualListingPrice: r.actualListingPrice ? Number(r.actualListingPrice) : null,
         notes: r.notes || '',
         createdAt: r.createdAt ? new Date(r.createdAt).toISOString() : undefined,
         updatedAt: r.updatedAt ? new Date(r.updatedAt).toISOString() : undefined,
       };
     });
+
   }
 
   const list: IpoLean[] = [];
@@ -336,8 +339,14 @@ export async function updateIpo(id: string, data: Record<string, unknown>): Prom
       fields.push(`allotment_date = $${idx++}`);
       values.push(data.allotmentDate);
     }
+    if (data.subscription !== undefined) {
+      fields.push(`subscription = $${idx++}`);
+      values.push(data.subscription ? JSON.stringify(data.subscription) : null);
+    }
 
     if (fields.length > 0) {
+
+
       fields.push(`updated_at = NOW()`);
       values.push(id);
       const sql = `UPDATE ipos SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *`;
