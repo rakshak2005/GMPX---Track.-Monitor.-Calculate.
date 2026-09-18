@@ -51,10 +51,10 @@ export function AppLayout({ onAdd }: { onAdd?: () => void }) {
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-white/10 bg-[#070b18]/90 px-3.5 py-2.5 sm:px-4 sm:py-3 backdrop-blur md:hidden w-full">
         <Link to="/" className="flex items-center gap-2">
           <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-violet-600 font-black text-sm text-white shadow-lg shadow-blue-500/20">
-            G
+            X
           </span>
           <div>
-            <span className="text-base font-black tracking-tight text-white">GMPulse</span>
+            <span className="text-base font-black tracking-tight text-white">GMPX</span>
             <span className="ml-1 text-[10px] text-blue-400 font-medium">LIVE</span>
           </div>
         </Link>
@@ -89,10 +89,10 @@ export function AppLayout({ onAdd }: { onAdd?: () => void }) {
       {/* Desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 hidden w-60 flex-col border-r border-white/5 bg-[#070b18]/90 p-5 md:flex">
         <div className="flex items-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-violet-600 font-black">G</span>
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-violet-600 font-black">X</span>
           <div>
             <div className="text-sm font-bold">IPO Command Center</div>
-            <div className="text-[11px] text-slate-500">GMPulse · Automated Tracker</div>
+            <div className="text-[11px] text-slate-500">GMPX · Automated Tracker</div>
           </div>
         </div>
         <nav className="mt-6 space-y-1">
@@ -220,9 +220,9 @@ export function AppLayout({ onAdd }: { onAdd?: () => void }) {
             <div className="flex items-center justify-between pb-4 border-b border-white/10">
               <div className="flex items-center gap-2">
                 <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-violet-600 font-bold text-white text-xs">
-                  G
+                  X
                 </span>
-                <span className="font-bold text-white">GMPulse Menu</span>
+                <span className="font-bold text-white">GMPX Menu</span>
               </div>
               <button
                 onClick={() => setMobileMenuOpen(false)}

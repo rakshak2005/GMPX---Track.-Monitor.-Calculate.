@@ -48,7 +48,7 @@ export function AuthModal({ open, onClose }: { open: boolean; onClose: () => voi
             {isRegister ? <UserPlus size={20} /> : <LogIn size={20} />}
           </div>
           <h2 className="text-lg font-bold text-white">
-            {isRegister ? 'Create Your Account' : 'Sign in to GMPulse'}
+            {isRegister ? 'Create Your Account' : 'Sign in to GMPX'}
           </h2>
           <p className="text-xs text-slate-400 mt-0.5">
             {isRegister
