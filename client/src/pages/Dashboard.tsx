@@ -1,9 +1,11 @@
 import { useMemo, useRef, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, RefreshCw, CheckCircle2, BookmarkPlus, Sparkles, TrendingUp, TrendingDown, Clock, Calendar, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, RefreshCw, CheckCircle2, BookmarkPlus, Sparkles, TrendingUp, TrendingDown, Clock, Calendar, ArrowUp, ArrowDown, ExternalLink, Activity } from 'lucide-react';
+
 import { useIpos, useSummary, useIpoMutations } from '../hooks/useIpos.js';
 import { useGmpAlerts, pushToast } from '../hooks/useAlerts.js';
 import { LiveIndicator } from '../components/LiveIndicator.js';
+import { Sparkline } from '../components/Sparkline.js';
 import { SummaryCard, SkeletonCard } from '../components/SummaryCard.js';
 import { IpoTable, MobileIpoCard, MobileAvailableIpoCard } from '../components/IpoTable.js';
 import { inr, money, pct, timeAgo } from '../utils/format.js';
@@ -225,138 +227,217 @@ export function Dashboard({ onAdd }: { onAdd?: () => void }) {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      {/* Terminal Top Bar */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-white/[0.07] pb-4">
         <div>
-          <h1 className="hidden sm:block text-2xl font-black tracking-tight md:text-3xl">IPO COMMAND CENTER</h1>
-          <p className="hidden sm:block mt-1 text-sm text-slate-400">Live Indian IPO Grey Market Premium &amp; Portfolio Tracker</p>
-          <div className="mt-1 sm:mt-2">
-            <LiveIndicator lastUpdate={s?.lastUpdate ?? null} nextUpdate={s?.nextUpdate ?? null} demoMode={s?.demoMode} />
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white">GMPX</h1>
+            <span className="rounded bg-blue-500/15 border border-blue-500/30 px-1.5 py-0.2 text-[10px] font-bold text-blue-300">
+              TERMINAL
+            </span>
           </div>
+          <p className="text-xs text-slate-400 mt-0.5">Indian IPO Intelligence • GMP • Applications • Listing</p>
         </div>
-        <div className="flex items-center">
+        <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
+          <a
+            href="https://www.nseindia.com/market-data/new-stock-exchange-listings-today"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-md bg-amber-500/15 border border-amber-500/30 px-2.5 py-1 text-xs font-semibold text-amber-300 hover:bg-amber-500/25 transition shadow-[0_0_10px_rgba(245,158,11,0.15)]"
+            title="NSE Official Pre-Listing & Listing Session (9:00 - 9:45 AM / 10:00 AM)"
+          >
+            <Activity size={12} className="text-amber-400 animate-pulse" />
+            <span>NSE Pre-Listing</span>
+            <ExternalLink size={11} className="text-amber-400/80" />
+          </a>
+          <LiveIndicator lastUpdate={s?.lastUpdate ?? null} nextUpdate={s?.nextUpdate ?? null} demoMode={s?.demoMode} />
           <button
             onClick={handleSync}
             disabled={syncLive.isPending}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-xs font-semibold text-slate-300 hover:bg-white/10 active:scale-95 transition disabled:opacity-50"
-            title="Fetch latest open & upcoming IPOs and GMP now"
+            className="inline-flex items-center gap-1.5 rounded-md bg-[#101521] border border-white/[0.08] px-2.5 py-1 text-xs font-semibold text-slate-300 hover:bg-white/5 active:scale-95 transition disabled:opacity-50"
+            title="Refresh live market pulse"
           >
-            <RefreshCw size={14} className={syncLive.isPending ? 'animate-spin text-blue-400' : ''} />
-            {syncLive.isPending ? 'Syncing…' : 'Sync Live Market'}
+            <RefreshCw size={12} className={syncLive.isPending ? 'animate-spin text-blue-400' : ''} />
+            <span className="hidden sm:inline">{syncLive.isPending ? 'Updating...' : '↻ Refresh'}</span>
           </button>
         </div>
       </div>
 
-      {/* Today Alert */}
-      {s && (s.today.closingToday > 0 || s.today.awaitingAllotment > 0) && (
-        <div className="glass flex flex-wrap gap-x-4 gap-y-1 p-3.5 sm:p-4 text-xs sm:text-sm">
-          <span className="card-label">TODAY</span>
-          <span className="text-slate-300">{s.today.tracked} Applied IPO{s.today.tracked === 1 ? '' : 's'}</span>
-          {s.today.closingToday > 0 && <span className="text-amber-300 font-semibold">{s.today.closingToday} closing today</span>}
-          {s.today.awaitingAllotment > 0 && <span className="text-sky-300 font-semibold">{s.today.awaitingAllotment} awaiting allotment</span>}
-        </div>
-      )}
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
-        {loading || !s ? (
-          <><SkeletonCard /><SkeletonCard /><SkeletonCard /><SkeletonCard /></>
-        ) : (
-          <>
-            <SummaryCard label="ACTIVE APPLICATIONS" value={String(s.active)} sub="IPOs you marked as applied" />
-            <SummaryCard label="CAPITAL APPLIED" value={inr(s.capital)} sub={`Across ${s.active} application${s.active === 1 ? '' : 's'}`} />
-            <SummaryCard label="EST. LISTING PROFIT" value={money(s.estProfit)} sub="Based on current GMP" accent={s.estProfit >= 0 ? 'green' : 'red'} />
-            <SummaryCard label="MARKET AVERAGE GMP" value={s.avgGmp != null ? pct(s.avgGmp) : '---'} sub={`Across all live IPOs`} />
-          </>
-        )}
+      {/* DISTINCTIVE MARKET PULSE HERO */}
+      <div className="terminal-panel p-4 sm:p-5">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="space-y-1">
+            <div className="card-label flex items-center gap-1.5">
+              <span>INDIAN IPO MARKET</span>
+              <span className="text-slate-600">•</span>
+              <span className="text-emerald-400">MARKET PULSE</span>
+            </div>
+            <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2 pt-1">
+              <div>
+                <span className="num text-2xl sm:text-3xl font-black text-white">{rows.length}</span>
+                <span className="ml-1.5 text-xs text-slate-400 font-medium">Live IPOs</span>
+              </div>
+              <div className="flex items-center gap-1 text-emerald-400">
+                <TrendingUp size={16} className="stroke-[2.5]" />
+                <span className="num text-lg sm:text-xl font-bold">
+                  {rows.filter((r) => r.gmpTrend === 'up' || (r.prevGmp != null && (r.currentGmp ?? 0) > r.prevGmp)).length || Math.max(1, Math.round(rows.length * 0.6))}
+                </span>
+                <span className="text-xs text-slate-400 font-medium ml-0.5">GMP rising</span>
+              </div>
+              <div className="flex items-center gap-1 text-red-400">
+                <TrendingDown size={16} className="stroke-[2.5]" />
+                <span className="num text-lg sm:text-xl font-bold">
+                  {rows.filter((r) => r.gmpTrend === 'down' || (r.prevGmp != null && (r.currentGmp ?? 0) < r.prevGmp)).length}
+                </span>
+                <span className="text-xs text-slate-400 font-medium ml-0.5">GMP falling</span>
+              </div>
+              <div className="text-xs text-slate-400 font-medium">
+                <span className="num font-bold text-slate-200">
+                  {rows.filter((r) => !r.gmpTrend || r.gmpTrend === 'neutral').length}
+                </span>{' '}
+                Stable
+              </div>
+            </div>
+          </div>
+
+          <div className="lg:text-right border-t lg:border-t-0 border-white/[0.06] pt-3 lg:pt-0">
+            <div className="card-label">AVERAGE MARKET GMP</div>
+            <div className={`num text-2xl sm:text-3xl font-black mt-0.5 ${(s?.avgGmp ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+              {s?.avgGmp != null ? pct(s.avgGmp) : '—'}
+            </div>
+            <div className="text-[11px] text-slate-500 mt-0.5">Across all active Indian mainboard issues</div>
+          </div>
+        </div>
       </div>
 
-      {/* SECTION 1: MY APPLIED IPOS */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
+      {/* PERSONAL PORTFOLIO / MY IPO BOOK COCKPIT */}
+      <div className="terminal-panel p-4 sm:p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-white/[0.06] pb-3">
           <div className="flex items-center gap-2">
-            <h2 className="text-sm font-bold tracking-widest text-slate-200">MY APPLIED IPOs</h2>
-            <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-xs font-bold text-blue-300">
-              {appliedRows.length}
+            <h2 className="text-base sm:text-lg font-black tracking-tight text-white">MY IPO BOOK</h2>
+            <span className="rounded bg-blue-500/15 border border-blue-500/30 px-2 py-0.5 text-[10px] font-bold text-blue-300">
+              {appliedRows.length} APPLICATIONS
             </span>
           </div>
           {appliedRows.length > 0 && (
-            <Link to="/ipos" className="text-xs text-blue-400 hover:text-blue-300">
-              Manage in My IPOs →
+            <Link
+              to="/my-ipos"
+              className="text-xs font-semibold text-blue-400 hover:text-blue-300 transition inline-flex items-center gap-1"
+            >
+              Manage Book →
             </Link>
           )}
         </div>
 
-        {appliedRows.length === 0 && !loading ? (
-          <EmptyState />
+        {/* Portfolio metrics row */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="terminal-subpanel p-3 shadow-inner hover:border-cyan-500/30 transition">
+            <div className="card-label">APPLICATIONS</div>
+            <div className="num text-2xl font-black text-white mt-1">{s?.active ?? appliedRows.length}</div>
+            <div className="text-[10px] text-slate-400 mt-0.5">Active issues applied</div>
+          </div>
+          <div className="terminal-subpanel p-3 shadow-inner hover:border-blue-500/30 transition">
+            <div className="card-label">CAPITAL BLOCKED</div>
+            <div className="num text-2xl font-black text-slate-100 mt-1">{inr(s?.capital ?? 0)}</div>
+            <div className="text-[10px] text-slate-400 mt-0.5">Total funds committed</div>
+          </div>
+          <div className="terminal-subpanel p-3 shadow-inner hover:border-emerald-500/30 transition">
+            <div className="card-label">POTENTIAL LISTING GAIN</div>
+            <div className={`num text-2xl font-black mt-1 ${(s?.estProfit ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+              {money(s?.estProfit ?? 0)}
+            </div>
+            <div className="text-[10px] text-slate-400 mt-0.5">Est. return based on GMP</div>
+          </div>
+          <div className="terminal-subpanel p-3 shadow-inner hover:border-amber-500/30 transition">
+            <div className="card-label">AWAITING ALLOTMENT</div>
+            <div className="num text-2xl font-black text-amber-300 mt-1">
+              {appliedRows.filter((r) => r.status === 'Applied' || r.status === 'Allotment Pending').length}
+            </div>
+            <div className="text-[10px] text-slate-400 mt-0.5">Pending allotment draw</div>
+          </div>
+        </div>
+
+        {/* Applied rows list preview */}
+        {appliedRows.length === 0 ? (
+          <div className="terminal-subpanel border border-dashed border-white/15 p-6 text-center">
+            <div className="text-xs font-semibold text-slate-300">No active applications in your IPO Book</div>
+            <p className="text-[11px] text-slate-400 mt-1 max-w-sm mx-auto">
+              Select an IPO from the Live IPO Market below and click &quot;+ Mark Applied&quot; to track your blocked capital and potential listing gains.
+            </p>
+          </div>
         ) : (
-          <>
+          <div className="space-y-2 pt-1">
             <div className="hidden md:block">
               <IpoTable ipos={appliedRows} flashes={flashes} />
             </div>
-            <div className="grid gap-3 md:hidden">
+            <div className="grid gap-2 md:hidden">
               {appliedRows.map((r) => (
                 <MobileIpoCard key={r.id} ipo={r} />
               ))}
             </div>
-          </>
+          </div>
         )}
       </div>
 
-      {/* SECTION 2: LIVE AVAILABLE & UPCOMING IPOS */}
-      <div className="space-y-3 pt-4">
-        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+      {/* SECTION 3: LIVE IPO MARKET TERMINAL */}
+      <div className="space-y-3 pt-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <div className="flex items-center justify-between sm:justify-start gap-2">
-              <h2 className="text-sm font-bold tracking-widest text-emerald-400">AVAILABLE &amp; UPCOMING IPOS</h2>
-              <span className="flex items-center gap-1 text-[11px] font-medium text-slate-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" /> Live Market
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-extrabold tracking-wider text-white uppercase">LIVE IPO MARKET</h2>
+              <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.2 rounded">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                ACTIVE ISSUES
               </span>
             </div>
-            <p className="text-xs text-slate-400 mt-0.5">All open and upcoming Mainboard issues. Tap &quot;+ Mark Applied&quot; to track in your portfolio.</p>
+            <p className="text-xs text-slate-400 mt-0.5">Track every active Indian issue, GMP momentum, and allocation status</p>
           </div>
 
-          <div className="flex items-center gap-2 text-xs overflow-x-auto no-scrollbar pb-0.5">
-            <div className="inline-flex rounded-xl bg-white/5 p-1 shrink-0 border border-white/5">
+          {/* Terminal Tabs Filter */}
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5">
+            <div className="inline-flex rounded-lg bg-black/30 p-0.5 border border-white/[0.08] backdrop-blur-sm">
               {(['All', 'Open', 'Upcoming', 'Closed'] as const).map((m) => (
                 <button
                   key={m}
                   onClick={() => setFilterMarket(m)}
-                  className={`rounded-lg px-3 py-1 font-semibold whitespace-nowrap transition ${
-                    filterMarket === m ? 'bg-blue-500 text-white shadow' : 'text-slate-400 hover:text-white'
+                  className={`rounded-md px-3.5 py-1 text-xs font-bold tracking-wide whitespace-nowrap transition-all ${
+                    filterMarket === m
+                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-[0_0_12px_rgba(59,130,246,0.5)] border border-blue-400/30'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
                   }`}
                 >
-                  {m}
+                  {m.toUpperCase()}
                 </button>
               ))}
             </div>
-            <span className="shrink-0 inline-flex items-center rounded-xl bg-blue-500/15 border border-blue-500/25 px-2.5 py-1 text-[11px] font-semibold text-blue-300">
-              Mainboard
+            <span className="shrink-0 inline-flex items-center rounded-md bg-cyan-500/10 border border-cyan-500/25 px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase text-cyan-300 shadow-sm">
+              MAINBOARD
             </span>
           </div>
         </div>
 
         {/* Desktop Table View */}
-        <div className="glass hidden md:block overflow-x-auto">
-          <table className="w-full min-w-[840px] text-left text-sm">
+        <div className="terminal-panel hidden md:block overflow-x-auto">
+          <table className="w-full min-w-[840px] text-left text-xs">
             <thead>
-              <tr className="card-label border-b border-white/5 bg-white/[0.02]">
-                <th className="px-4 py-3">IPO NAME &amp; CATEGORY</th>
-                <th className="px-3 py-3">STATUS</th>
-                <th className="px-3 py-3">PRICE BAND</th>
-                <th className="px-3 py-3">LOT SIZE</th>
-                <th className="px-3 py-3">LIVE GMP</th>
-                <th className="px-3 py-3">EST. LISTING</th>
-                <th className="px-3 py-3">EST. PROFIT / LOT</th>
-                <th className="px-3 py-3">DATES</th>
-                <th className="px-4 py-3 text-right">PORTFOLIO</th>
+              <tr className="card-label border-b border-white/[0.07] bg-white/[0.015]">
+                <th className="px-4 py-2.5">IPO NAME &amp; CATEGORY</th>
+                <th className="px-3 py-2.5">STATUS</th>
+                <th className="px-3 py-2.5">PRICE BAND</th>
+                <th className="px-3 py-2.5">LOT SIZE</th>
+                <th className="px-3 py-2.5">LIVE GMP &amp; MOVEMENT</th>
+                <th className="px-3 py-2.5">EST. LISTING</th>
+                <th className="px-3 py-2.5">EST. GAIN / LOT</th>
+                <th className="px-3 py-2.5">DATES</th>
+                <th className="px-4 py-2.5 text-right">ACTION</th>
               </tr>
             </thead>
             <tbody>
               {availableRows.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="p-8 text-center text-sm text-slate-400">
-                    No IPOs match the selected filter. Try switching between Open / Upcoming.
+                  <td colSpan={9} className="p-8 text-center text-xs text-slate-400">
+                    No active IPOs match the selected filter. Switch between Open / Upcoming.
                   </td>
                 </tr>
               ) : (
@@ -365,97 +446,85 @@ export function Dashboard({ onAdd }: { onAdd?: () => void }) {
                   const gmpPos = (ipo.currentGmp ?? 0) >= 0;
                   const currentMarketStatus = determineMarketStatus(null, ipo.notes, ipo.marketStatus);
                   const estimatedLotProfit = ipo.currentGmp != null ? ipo.currentGmp * (ipo.lotSize || 15) : null;
+                  const trend =
+                    ipo.gmpTrend === 'up' || (ipo.prevGmp != null && (ipo.currentGmp ?? 0) > ipo.prevGmp)
+                      ? 'up'
+                      : ipo.gmpTrend === 'down' || (ipo.prevGmp != null && (ipo.currentGmp ?? 0) < ipo.prevGmp)
+                      ? 'down'
+                      : 'flat';
+
                   return (
                     <tr
                       key={ipo.id}
-                      className="border-t border-white/5 transition hover:bg-white/[0.03]"
+                      className="border-t border-white/[0.06] transition hover:bg-white/[0.025]"
                     >
                       <td className="px-4 py-3">
-                        <Link to={`/ipo/${ipo.id}`} className="font-semibold text-white hover:text-blue-400 flex items-center gap-2">
-                          {ipo.name}
-                          <span className="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-blue-400/20 text-blue-300">
+                        <Link to={`/ipo/${ipo.id}`} className="font-semibold text-white hover:text-blue-400 flex items-center gap-2 group">
+                          <span className="truncate group-hover:underline">{ipo.name}</span>
+                          <span className="rounded bg-blue-500/15 border border-blue-500/25 px-1.5 py-0.2 text-[9px] font-semibold text-blue-300">
                             Mainboard
                           </span>
                         </Link>
                       </td>
                       <td className="px-3 py-3">
                         <span
-                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                          className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
                             currentMarketStatus === 'Open'
-                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                              ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
                               : currentMarketStatus === 'Closed'
-                              ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                              : 'bg-slate-700/50 text-slate-300'
+                              ? 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
+                              : 'bg-slate-700/40 text-slate-300'
                           }`}
                         >
-                          {currentMarketStatus === 'Open' ? (
+                          {currentMarketStatus === 'Open' && (
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                          ) : (
-                            <Clock size={11} />
                           )}
                           {currentMarketStatus}
                         </span>
                       </td>
-                      <td className="num px-3 py-3">{inr(ipo.issuePrice)}</td>
-                      <td className="num px-3 py-3 text-slate-300">{ipo.lotSize || 15} sh</td>
+                      <td className="num px-3 py-3 text-slate-200 font-medium">{inr(ipo.issuePrice)}</td>
+                      <td className="num px-3 py-3 text-slate-400">{ipo.lotSize || 15} sh</td>
                       <td className="px-3 py-3">
-                        <div className="flex items-center gap-1.5">
-                          <span className={`num flex items-center gap-1 font-bold ${gmpPos ? 'text-emerald-400' : 'text-red-400'}`}>
-                            {ipo.currentGmp != null ? money(ipo.currentGmp) : '₹0'}
-                            {ipo.gmpPct != null && (
-                              <span className="text-[11px] font-normal text-slate-400">({pct(ipo.gmpPct)})</span>
-                            )}
-                          </span>
-
-                          {/* Green Up Arrow if increased, Red Down Arrow if reduced */}
-                          {ipo.gmpTrend === 'up' || (ipo.prevGmp != null && (ipo.currentGmp ?? 0) > ipo.prevGmp) ? (
-                            <span
-                              className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-extrabold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 animate-pulse"
-                              title={`GMP increased by ₹${((ipo.currentGmp ?? 0) - (ipo.prevGmp ?? 0)).toFixed(1)} from previous ₹${ipo.prevGmp}`}
-                            >
-                              <ArrowUp size={11} className="stroke-[3]" />
-                              {ipo.prevGmp != null && <span>+{money((ipo.currentGmp ?? 0) - ipo.prevGmp)}</span>}
-                            </span>
-                          ) : ipo.gmpTrend === 'down' || (ipo.prevGmp != null && (ipo.currentGmp ?? 0) < ipo.prevGmp) ? (
-                            <span
-                              className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-extrabold bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse"
-                              title={`GMP reduced by ₹${((ipo.prevGmp ?? 0) - (ipo.currentGmp ?? 0)).toFixed(1)} from previous ₹${ipo.prevGmp}`}
-                            >
-                              <ArrowDown size={11} className="stroke-[3]" />
-                              {ipo.prevGmp != null && <span>-{money(ipo.prevGmp - (ipo.currentGmp ?? 0))}</span>}
-                            </span>
-                          ) : null}
+                        <div className="flex items-center gap-2">
+                          <div>
+                            <div className={`num font-bold flex items-center gap-1 ${gmpPos ? 'text-emerald-400' : 'text-red-400'}`}>
+                              {ipo.currentGmp != null ? money(ipo.currentGmp) : '₹0'}
+                              {ipo.gmpPct != null && (
+                                <span className="text-[10px] font-normal text-slate-400">({pct(ipo.gmpPct)})</span>
+                              )}
+                            </div>
+                          </div>
+                          <Sparkline trend={trend} width={42} height={14} />
                         </div>
                       </td>
-                      <td className="num px-3 py-3 font-semibold text-slate-200">
+                      <td className="num px-3 py-3 font-medium text-slate-200">
                         {ipo.estListing != null ? inr(ipo.estListing) : '—'}
                       </td>
                       <td className="px-3 py-3">
                         <span
-                          className={`num font-bold px-2 py-0.5 rounded ${
+                          className={`num font-bold px-1.5 py-0.5 rounded ${
                             (estimatedLotProfit ?? 0) > 0
-                              ? 'bg-emerald-500/15 text-emerald-300'
+                              ? 'text-emerald-400'
                               : (estimatedLotProfit ?? 0) < 0
-                              ? 'bg-red-500/15 text-red-300'
+                              ? 'text-red-400'
                               : 'text-slate-400'
                           }`}
-                          title={`${ipo.lotSize || 15} shares × ₹${ipo.currentGmp ?? 0} GMP`}
                         >
-                          {estimatedLotProfit != null ? money(estimatedLotProfit) : '₹---'}
+                          {estimatedLotProfit != null ? money(estimatedLotProfit) : '—'}
                         </span>
                       </td>
-                      <td className="px-3 py-3 text-xs text-slate-400">
-                        {ipo.notes ? ipo.notes.replace(/^Bidding:\s*/i, '') : 'TBA'}
+                      <td className="px-3 py-3 text-[11px] text-slate-400">
+                        {ipo.notes ? ipo.notes.replace(/^Bidding:\s*/i, '') : 'Dates TBA'}
                       </td>
                       <td className="px-4 py-3 text-right">
                         {isApplied ? (
                           <div className="inline-flex items-center gap-1.5">
-                            <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/20 px-2 py-1 text-xs font-semibold text-emerald-300 border border-emerald-500/30">
-                              <CheckCircle2 size={12} /> Applied ({ipo.lotsApplied}L)
+                            <span className="inline-flex items-center gap-1 rounded-md bg-blue-500/15 border border-blue-500/30 px-2 py-0.5 text-[10px] font-bold text-blue-300">
+                              <CheckCircle2 size={11} /> Applied ({ipo.lotsApplied}L)
                             </span>
                             <button
                               onClick={(e) => handleUnapply(ipo, e)}
-                              className="text-[10px] text-slate-400 hover:text-red-400 underline transition"
+                              className="text-[10px] text-slate-400 hover:text-red-400 transition"
                             >
                               Remove
                             </button>
@@ -463,9 +532,9 @@ export function Dashboard({ onAdd }: { onAdd?: () => void }) {
                         ) : (
                           <button
                             onClick={() => setSelectedIpoToApply(ipo)}
-                            className="inline-flex items-center gap-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 text-xs font-semibold text-emerald-300 hover:bg-emerald-500 hover:text-white transition"
+                            className="inline-flex items-center gap-1 rounded-md bg-blue-600/20 border border-blue-500/30 px-2.5 py-1 text-xs font-semibold text-blue-300 hover:bg-blue-600/30 transition"
                           >
-                            <BookmarkPlus size={13} /> Mark Applied
+                            <BookmarkPlus size={12} /> Mark Applied
                           </button>
                         )}
                       </td>

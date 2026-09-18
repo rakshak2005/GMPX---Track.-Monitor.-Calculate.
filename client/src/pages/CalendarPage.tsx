@@ -12,32 +12,78 @@ export function CalendarPage() {
     const t = new Date(y, m - 1 + d, 1);
     setMonth(`${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}`);
   };
-  const color: Record<string, string> = {
-    'IPO Opens': 'bg-sky-400/10 text-sky-300 border-sky-400/30',
-    'IPO Closes': 'bg-amber-400/10 text-amber-300 border-amber-400/30',
-    Allotment: 'bg-violet-400/10 text-violet-300 border-violet-400/30',
-    Listing: 'bg-emerald-400/10 text-emerald-300 border-emerald-400/30',
+
+  const badgeStyle: Record<string, string> = {
+    'IPO Opens': 'bg-blue-500/15 text-blue-300 border-blue-500/30',
+    'IPO Closes': 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+    Allotment: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30',
+    Listing: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
   };
+
   return (
     <div className="space-y-5">
-      <h1 className="text-2xl font-black">IPO Calendar</h1>
-      <div className="flex items-center gap-2">
-        <button onClick={() => shift(-1)} className="rounded-lg border border-white/10 px-3 py-1.5 text-sm">←</button>
-        <input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="!w-44" />
-        <button onClick={() => shift(1)} className="rounded-lg border border-white/10 px-3 py-1.5 text-sm">→</button>
+      <div className="border-b border-white/[0.07] pb-3">
+        <div className="flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">IPO TIMELINE CALENDAR</h1>
+          <span className="rounded bg-blue-500/15 border border-blue-500/30 px-2 py-0.5 text-[10px] font-bold text-blue-300">
+            MARKET MILESTONES
+          </span>
+        </div>
+        <p className="text-xs text-slate-400 mt-1">
+          Chronological schedule of IPO openings, closings, allotment finalization, and exchange listings
+        </p>
       </div>
-      {isLoading ? <div className="glass p-6"><div className="skeleton h-48 w-full" /></div> : (
-        <div className="space-y-2">
-          {(data ?? []).map((e, i) => (
-            <Link key={i} to={`/ipo/${e.ipoId}`} className="glass flex items-center justify-between p-4 hover:border-blue-400/30">
-              <div>
-                <span className={`mr-2 inline-flex rounded-full border px-2 py-0.5 text-xs font-semibold ${color[e.type] ?? ''}`}>{e.type}</span>
-                <span className="font-semibold">{e.ipoName}</span>
+
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => shift(-1)}
+          className="rounded-md bg-[#101521] border border-white/[0.08] px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-white/5 transition"
+        >
+          ← Prev
+        </button>
+        <input
+          type="month"
+          value={month}
+          onChange={(e) => setMonth(e.target.value)}
+          className="!w-44 text-xs font-semibold bg-[#101521] border border-white/[0.08]"
+        />
+        <button
+          onClick={() => shift(1)}
+          className="rounded-md bg-[#101521] border border-white/[0.08] px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-white/5 transition"
+        >
+          Next →
+        </button>
+      </div>
+
+      {isLoading ? (
+        <div className="terminal-panel p-6"><div className="skeleton h-48 w-full" /></div>
+      ) : !data || data.length === 0 ? (
+        <div className="terminal-panel p-8 text-center text-xs text-slate-400">
+          No market milestones scheduled in {month}.
+        </div>
+      ) : (
+        <div className="terminal-panel divide-y divide-white/[0.06] overflow-hidden">
+          {data.map((e, i) => (
+            <Link
+              key={i}
+              to={`/ipo/${e.ipoId}`}
+              className="flex items-center justify-between p-3.5 hover:bg-white/[0.025] transition group text-xs"
+            >
+              <div className="flex items-center gap-3">
+                <span
+                  className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                    badgeStyle[e.type] ?? 'bg-slate-500/15 text-slate-400 border-slate-500/30'
+                  }`}
+                >
+                  {e.type}
+                </span>
+                <span className="font-semibold text-white group-hover:text-blue-400 transition text-sm">
+                  {e.ipoName}
+                </span>
               </div>
-              <span className="num text-sm text-slate-300">{fmtDate(e.date)}</span>
+              <span className="num font-semibold text-slate-300">{fmtDate(e.date)}</span>
             </Link>
           ))}
-          {(data ?? []).length === 0 && <div className="glass p-8 text-center text-sm text-slate-500">No events in {month}.</div>}
         </div>
       )}
     </div>

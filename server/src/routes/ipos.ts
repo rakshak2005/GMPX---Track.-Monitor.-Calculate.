@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import {
-  applyIpoHandler, createIpoHandler, deleteIpoHandler, getIpoHandler, listIposHandler,
-  subHistoryHandler, syncLiveHandler, updateIpoHandler, updateStatusHandler, updateSubscriptionHandler,
+  applyIpoHandler, checkAllotmentHandler, createIpoHandler, deleteIpoHandler, getIpoHandler, listIposHandler,
+  registrarActiveIssuesHandler, subHistoryHandler, syncLiveHandler, updateIpoHandler, updateStatusHandler, updateSubscriptionHandler,
 } from '../controllers/ipoController.js';
 import { getGmpHandler, gmpHistoryHandler, refreshGmpHandler } from '../controllers/gmpController.js';
 
@@ -11,6 +11,7 @@ import { getGmpHandler, gmpHistoryHandler, refreshGmpHandler } from '../controll
 export const ipoRouter = Router();
 
 ipoRouter.get('/', listIposHandler);
+ipoRouter.get('/registrar-issues', registrarActiveIssuesHandler);
 ipoRouter.post('/', createIpoHandler);
 ipoRouter.post('/sync', syncLiveHandler);
 ipoRouter.get('/:id', getIpoHandler);
@@ -18,6 +19,7 @@ ipoRouter.put('/:id', updateIpoHandler);
 ipoRouter.post('/:id/apply', applyIpoHandler);
 ipoRouter.delete('/:id', deleteIpoHandler);
 ipoRouter.put('/:id/status', updateStatusHandler);
+ipoRouter.post('/:id/check-allotment', checkAllotmentHandler);
 ipoRouter.put('/:id/subscription', updateSubscriptionHandler);
 ipoRouter.post('/:id/subscription/snapshot', updateSubscriptionHandler);
 ipoRouter.get('/:id/subscription/history', subHistoryHandler);

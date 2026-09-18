@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom';
-import { TrendingDown, TrendingUp, ArrowUp, ArrowDown } from 'lucide-react';
+import { TrendingDown, TrendingUp, ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
 import type { Ipo } from '../types/ipo.js';
 import { inr, money, pct, timeAgo } from '../utils/format.js';
 import { StatusBadge } from './StatusBadge.js';
 import { Tooltip } from './Tooltip.js';
 import { Countdown } from './Countdown.js';
+import { Sparkline } from './Sparkline.js';
 
 function initials(name: string): string {
   return name.split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
@@ -13,91 +14,123 @@ function initials(name: string): string {
 export function IpoRow({ ipo, flash }: { ipo: Ipo; flash?: 'up' | 'down' | null }) {
   const g = ipo.currentGmp;
   const pos = (g ?? 0) >= 0;
+  const trend =
+    ipo.gmpTrend === 'up' || (ipo.prevGmp != null && (g ?? 0) > ipo.prevGmp)
+      ? 'up'
+      : ipo.gmpTrend === 'down' || (ipo.prevGmp != null && (g ?? 0) < ipo.prevGmp)
+      ? 'down'
+      : 'flat';
+
   return (
-    <tr className={`border-t border-white/5 transition hover:bg-white/[0.03] ${flash === 'up' ? 'flash-up' : flash === 'down' ? 'flash-down' : ''}`}>
+    <tr
+      className={`border-t border-white/[0.06] transition hover:bg-white/[0.025] ${
+        flash === 'up' ? 'flash-up' : flash === 'down' ? 'flash-down' : ''
+      }`}
+    >
+      {/* Primary IPO Identity */}
       <td className="px-4 py-3">
-        <Link to={`/ipo/${ipo.id}`} className="flex items-center gap-3">
+        <Link to={`/ipo/${ipo.id}`} className="flex items-center gap-3 group">
           {ipo.logoUrl ? (
-            <img src={ipo.logoUrl} alt="" className="h-9 w-9 rounded-lg object-cover" />
+            <img src={ipo.logoUrl} alt="" className="h-8 w-8 rounded-lg object-cover border border-white/10" />
           ) : (
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500/40 to-violet-500/40 text-xs font-bold">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10 border border-blue-500/20 text-[11px] font-bold text-blue-300">
               {initials(ipo.name)}
             </span>
           )}
-          <span>
-            <span className="block font-semibold text-white">{ipo.name}</span>
-            <span className="block text-xs text-slate-400">
-              <StatusBadge status={ipo.status} /> <Countdown target={ipo.closeDate} prefix="closes in" />
+          <div className="min-w-0">
+            <span className="block font-semibold text-white group-hover:text-blue-400 transition truncate">
+              {ipo.name}
             </span>
-          </span>
+            <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mt-0.5">
+              <StatusBadge status={ipo.status} />
+              <span className="text-slate-600">•</span>
+              <Countdown target={ipo.closeDate} prefix="closes in" />
+            </div>
+          </div>
         </Link>
       </td>
-      <td className="num px-3 py-3">{inr(ipo.issuePrice)}</td>
-      <td className="num px-3 py-3">{ipo.lotSize}</td>
-      <td className="num px-3 py-3">{ipo.lotsApplied}</td>
-      <td className="num px-3 py-3">{inr(ipo.investment ?? null)}</td>
+
+      {/* Price & Lots */}
+      <td className="num px-3 py-3 text-slate-200 font-medium">{inr(ipo.issuePrice)}</td>
+      <td className="num px-3 py-3 text-slate-400">{ipo.lotSize} sh</td>
+      <td className="num px-3 py-3 font-semibold text-slate-200">{ipo.lotsApplied}</td>
+      <td className="num px-3 py-3 font-semibold text-slate-200">{inr(ipo.investment ?? null)}</td>
+
+      {/* Live GMP + Movement + Sparkline */}
       <td className="px-3 py-3">
         {g === null || g === undefined ? (
-          <span className="text-xs text-slate-500">GMP unavailable</span>
+          <span className="text-xs text-slate-500">Unavailable</span>
         ) : (
-          <Tooltip label="Grey Market Premium. An unofficial indicator of potential listing sentiment.">
-            <div className="flex items-center gap-1.5">
-              <span className={`num flex items-center gap-1 font-semibold ${pos ? 'text-emerald-300' : 'text-red-300'}`}>
-                {pos ? <TrendingUp size={14} /> : <TrendingDown size={14} />}{money(g)}
-              </span>
-
-              {/* Green Up Arrow if increased, Red Down Arrow if reduced */}
-              {ipo.gmpTrend === 'up' || (ipo.prevGmp != null && (ipo.currentGmp ?? 0) > ipo.prevGmp) ? (
-                <span
-                  className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-extrabold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                  title={`GMP increased by ₹${((ipo.currentGmp ?? 0) - (ipo.prevGmp ?? 0)).toFixed(1)} from previous ₹${ipo.prevGmp}`}
-                >
-                  <ArrowUp size={11} className="stroke-[3]" />
-                  {ipo.prevGmp != null && <span>+{money((ipo.currentGmp ?? 0) - ipo.prevGmp)}</span>}
-                </span>
-              ) : ipo.gmpTrend === 'down' || (ipo.prevGmp != null && (ipo.currentGmp ?? 0) < ipo.prevGmp) ? (
-                <span
-                  className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-extrabold bg-red-500/20 text-red-400 border border-red-500/30"
-                  title={`GMP reduced by ₹${((ipo.prevGmp ?? 0) - (ipo.currentGmp ?? 0)).toFixed(1)} from previous ₹${ipo.prevGmp}`}
-                >
-                  <ArrowDown size={11} className="stroke-[3]" />
-                  {ipo.prevGmp != null && <span>-{money(ipo.prevGmp - (ipo.currentGmp ?? 0))}</span>}
-                </span>
-              ) : null}
+          <Tooltip label="Grey Market Premium with recent trend direction">
+            <div className="flex items-center gap-2">
+              <div>
+                <div className={`num font-bold flex items-center gap-1 ${pos ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {money(g)}
+                  {trend === 'up' ? (
+                    <ArrowUpRight size={13} className="stroke-[2.5]" />
+                  ) : trend === 'down' ? (
+                    <ArrowDownRight size={13} className="stroke-[2.5]" />
+                  ) : (
+                    <Minus size={11} className="text-slate-500" />
+                  )}
+                </div>
+                <div className="num text-[11px] text-slate-400">{pct(ipo.gmpPct)}</div>
+              </div>
+              <Sparkline trend={trend} width={44} height={16} />
             </div>
           </Tooltip>
         )}
       </td>
-      <td className={`num px-3 py-3 ${pos ? 'text-emerald-300' : 'text-red-300'}`}>{pct(ipo.gmpPct)}</td>
-      <td className="num px-3 py-3">{ipo.estListing != null ? inr(ipo.estListing) : '₹---'}</td>
-      <td className={`num px-3 py-3 font-semibold ${pos ? 'text-emerald-300' : 'text-red-300'}`}>
-        <Tooltip label="Estimated gross profit based on the current GMP and your expected allotted quantity. Estimate only — not guaranteed.">
-          <span>{ipo.estProfit != null ? money(ipo.estProfit) : '₹---'}</span>
+
+      {/* Estimated Listing */}
+      <td className="num px-3 py-3 font-medium text-slate-200">
+        {ipo.estListing != null ? inr(ipo.estListing) : '—'}
+      </td>
+
+      {/* Potential Listing Gain */}
+      <td className={`num px-3 py-3 font-bold ${(ipo.estProfit ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+        <Tooltip label="Potential listing gain based on current GMP and applied quantity.">
+          <span>{ipo.estProfit != null ? money(ipo.estProfit) : '—'}</span>
         </Tooltip>
       </td>
+
+      {/* Demand / Subscription */}
       <td className="px-3 py-3">
-        <Tooltip label="Demand received relative to shares offered.">
-          <span className="num">{ipo.subscription?.total != null ? `${ipo.subscription.total}x` : '---'}</span>
-        </Tooltip>
+        <span className="num font-medium text-slate-300">
+          {ipo.subscription?.total != null ? `${ipo.subscription.total}x` : '—'}
+        </span>
       </td>
-      <td className="px-4 py-3 text-right text-xs text-slate-500">Updated {timeAgo(ipo.lastGmpAt)}</td>
+
+      {/* Updated Timestamp */}
+      <td className="px-4 py-3 text-right text-[11px] text-slate-500 whitespace-nowrap">
+        {timeAgo(ipo.lastGmpAt)}
+      </td>
     </tr>
   );
 }
 
 export function IpoTable({ ipos, flashes }: { ipos: Ipo[]; flashes: Record<string, 'up' | 'down'> }) {
   return (
-    <div className="glass overflow-x-auto">
-      <table className="w-full min-w-[900px] text-left text-sm">
+    <div className="terminal-panel overflow-x-auto">
+      <table className="w-full min-w-[900px] text-left text-xs">
         <thead>
-          <tr className="card-label">
-            {['IPO', 'PRICE', 'LOT', 'LOTS', 'INVESTED', 'GMP', 'GMP %', 'EST. LISTING', 'EST. PROFIT', 'SUBSCRIPTION', ''].map((h) => (
-              <th key={h} className="px-3 py-3 font-semibold first:pl-4 last:pr-4">{h}</th>
-            ))}
+          <tr className="card-label border-b border-white/[0.07] bg-white/[0.015]">
+            <th className="px-4 py-2.5">IPO ISSUE</th>
+            <th className="px-3 py-2.5">PRICE</th>
+            <th className="px-3 py-2.5">LOT SIZE</th>
+            <th className="px-3 py-2.5">LOTS</th>
+            <th className="px-3 py-2.5">CAPITAL BLOCKED</th>
+            <th className="px-3 py-2.5">GMP MOVEMENT</th>
+            <th className="px-3 py-2.5">EST. LISTING</th>
+            <th className="px-3 py-2.5">POTENTIAL GAIN</th>
+            <th className="px-3 py-2.5">SUBSCRIPTION</th>
+            <th className="px-4 py-2.5 text-right">LAST PULSE</th>
           </tr>
         </thead>
         <tbody>
-          {ipos.map((i) => <IpoRow key={i.id} ipo={i} flash={flashes[i.id]} />)}
+          {ipos.map((i) => (
+            <IpoRow key={i.id} ipo={i} flash={flashes[i.id]} />
+          ))}
         </tbody>
       </table>
     </div>
@@ -107,61 +140,65 @@ export function IpoTable({ ipos, flashes }: { ipos: Ipo[]; flashes: Record<strin
 export function MobileIpoCard({ ipo }: { ipo: Ipo }) {
   const g = ipo.currentGmp;
   const pos = (g ?? 0) >= 0;
+  const trend =
+    ipo.gmpTrend === 'up' || (ipo.prevGmp != null && (g ?? 0) > ipo.prevGmp)
+      ? 'up'
+      : ipo.gmpTrend === 'down' || (ipo.prevGmp != null && (g ?? 0) < ipo.prevGmp)
+      ? 'down'
+      : 'flat';
+
   return (
-    <Link to={`/ipo/${ipo.id}`} className="glass block p-4 transition active:scale-[0.99] hover:border-white/20">
+    <Link
+      to={`/ipo/${ipo.id}`}
+      className="terminal-panel block p-3.5 transition active:scale-[0.99] hover:border-white/20"
+    >
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2.5 min-w-0">
           {ipo.logoUrl ? (
-            <img src={ipo.logoUrl} alt="" className="h-9 w-9 rounded-xl object-cover shrink-0 border border-white/10" />
+            <img src={ipo.logoUrl} alt="" className="h-8 w-8 rounded-lg object-cover shrink-0 border border-white/10" />
           ) : (
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500/30 to-violet-500/30 text-xs font-bold border border-white/10">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 border border-blue-500/20 text-[10px] font-bold text-blue-300">
               {initials(ipo.name)}
             </span>
           )}
           <div className="min-w-0">
-            <div className="font-bold text-white text-base truncate">{ipo.name}</div>
-            <div className="text-xs text-slate-400 truncate">
-              {ipo.lotsApplied} Lot{ipo.lotsApplied > 1 ? 's' : ''} ({ipo.lotsApplied * (ipo.lotSize || 15)} sh) · {inr(ipo.investment ?? null)}
+            <div className="font-bold text-white text-sm truncate">{ipo.name}</div>
+            <div className="text-[11px] text-slate-400 truncate">
+              {ipo.lotsApplied} Lot{ipo.lotsApplied > 1 ? 's' : ''} ({ipo.lotsApplied * (ipo.lotSize || 15)} sh) •{' '}
+              <span className="num font-semibold text-slate-300">{inr(ipo.investment ?? null)}</span>
             </div>
           </div>
         </div>
         <StatusBadge status={ipo.status} />
       </div>
 
-      <div className="mt-3.5 grid grid-cols-2 gap-2.5 rounded-xl bg-white/[0.03] border border-white/5 p-3 text-xs">
+      <div className="mt-3 grid grid-cols-2 gap-2 rounded-lg bg-[#090D17] border border-white/[0.06] p-2.5 text-xs">
         <div>
-          <div className="card-label">CURRENT GMP</div>
-          <div className="flex items-center gap-1.5 mt-0.5">
-            <span className={`num font-extrabold text-base ${pos ? 'text-emerald-300' : 'text-red-300'}`}>
+          <div className="card-label">GMP MOVEMENT</div>
+          <div className="flex items-center gap-2 mt-0.5">
+            <span className={`num font-extrabold text-sm ${pos ? 'text-emerald-400' : 'text-red-400'}`}>
               {g != null ? money(g) : '—'}
             </span>
-            {ipo.gmpPct != null && (
-              <span className={`num text-xs ${pos ? 'text-emerald-400/80' : 'text-red-400/80'}`}>({pct(ipo.gmpPct)})</span>
-            )}
+            <Sparkline trend={trend} width={38} height={14} />
           </div>
+          {ipo.gmpPct != null && (
+            <div className="text-[10px] text-slate-400 num">{pct(ipo.gmpPct)}</div>
+          )}
         </div>
         <div>
-          <div className="card-label">EST. LISTING</div>
-          <div className="num font-bold text-slate-200 text-sm mt-1">
-            {ipo.estListing != null ? inr(ipo.estListing) : '—'}
-          </div>
-        </div>
-        <div>
-          <div className="card-label">EST. PROFIT</div>
-          <div className={`num font-bold text-sm mt-0.5 ${(ipo.estProfit ?? 0) >= 0 ? 'text-emerald-300' : 'text-red-300'}`}>
+          <div className="card-label">POTENTIAL GAIN</div>
+          <div className={`num font-bold text-sm mt-0.5 ${(ipo.estProfit ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
             {ipo.estProfit != null ? money(ipo.estProfit) : '—'}
           </div>
-        </div>
-        <div>
-          <div className="card-label">SUBSCRIPTION</div>
-          <div className="num font-bold text-slate-200 text-sm mt-0.5">
-            {ipo.subscription?.total != null ? `${ipo.subscription.total}x` : '—'}
+          <div className="text-[10px] text-slate-500 num">
+            Est. {ipo.estListing != null ? inr(ipo.estListing) : '—'}
           </div>
         </div>
       </div>
-      <div className="mt-2.5 flex items-center justify-between text-[11px] text-slate-500">
-        <span>Updated {timeAgo(ipo.lastGmpAt)}</span>
-        <span className="text-blue-400 font-medium flex items-center gap-0.5">Details →</span>
+
+      <div className="mt-2.5 flex items-center justify-between text-[10px] text-slate-500">
+        <span>Pulse {timeAgo(ipo.lastGmpAt)}</span>
+        <span className="text-blue-400 font-medium">Terminal Details →</span>
       </div>
     </Link>
   );
@@ -180,55 +217,52 @@ export function MobileAvailableIpoCard({
   const gmpPos = (ipo.currentGmp ?? 0) >= 0;
   const currentMarketStatus = ipo.marketStatus || 'Upcoming';
   const estimatedLotProfit = ipo.currentGmp != null ? ipo.currentGmp * (ipo.lotSize || 15) : null;
+  const trend =
+    ipo.gmpTrend === 'up' || (ipo.prevGmp != null && (ipo.currentGmp ?? 0) > ipo.prevGmp)
+      ? 'up'
+      : ipo.gmpTrend === 'down' || (ipo.prevGmp != null && (ipo.currentGmp ?? 0) < ipo.prevGmp)
+      ? 'down'
+      : 'flat';
 
   return (
-    <div className="glass p-3.5 sm:p-4 transition hover:border-white/20 space-y-3">
+    <div className="terminal-panel p-3.5 space-y-2.5">
       <div className="flex items-start justify-between gap-2">
-        <Link to={`/ipo/${ipo.id}`} className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="font-bold text-white text-sm sm:text-base hover:text-blue-400 break-words leading-tight">
+        <Link to={`/ipo/${ipo.id}`} className="min-w-0 flex-1 group">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="font-bold text-white text-sm group-hover:text-blue-400 transition truncate">
               {ipo.name}
             </span>
-            <span className="rounded px-1.5 py-0.5 text-[9px] font-semibold bg-blue-400/20 text-blue-300 shrink-0">
+            <span className="rounded bg-blue-500/15 border border-blue-500/25 px-1.5 py-0.2 text-[9px] font-semibold text-blue-300">
               {ipo.category || 'Mainboard'}
             </span>
           </div>
-          <div className="mt-1 text-xs text-slate-400">
-            Price: <strong className="text-slate-200 num">{inr(ipo.issuePrice)}</strong> · Lot: <strong className="text-slate-200 num">{ipo.lotSize || 15}</strong> sh
+          <div className="mt-0.5 text-xs text-slate-400">
+            Price: <span className="text-slate-200 num font-medium">{inr(ipo.issuePrice)}</span> • Lot:{' '}
+            <span className="text-slate-200 num font-medium">{ipo.lotSize || 15}</span> sh
           </div>
         </Link>
         <span
-          className={`shrink-0 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+          className={`shrink-0 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
             currentMarketStatus === 'Open'
-              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+              ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
               : currentMarketStatus === 'Closed'
-              ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-              : 'bg-slate-700/50 text-slate-300 border border-white/5'
+              ? 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
+              : 'bg-slate-700/40 text-slate-300 border border-white/[0.06]'
           }`}
         >
-          {currentMarketStatus === 'Open' ? (
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          ) : null}
+          {currentMarketStatus === 'Open' && <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />}
           {currentMarketStatus}
         </span>
       </div>
 
-      <div className="grid grid-cols-3 gap-1.5 sm:gap-2 rounded-xl bg-white/[0.03] border border-white/5 p-2 sm:p-2.5 text-xs">
+      <div className="grid grid-cols-3 gap-2 rounded-lg bg-[#090D17] border border-white/[0.06] p-2 text-xs">
         <div className="min-w-0">
-          <div className="card-label text-[9px] sm:text-[10px] truncate">LIVE GMP</div>
-          <div className="flex items-center gap-0.5 sm:gap-1 mt-0.5">
-            <span className={`num font-bold text-xs sm:text-sm truncate ${gmpPos ? 'text-emerald-400' : 'text-red-400'}`}>
+          <div className="card-label">GMP</div>
+          <div className="flex items-center gap-1 mt-0.5">
+            <span className={`num font-bold text-xs truncate ${gmpPos ? 'text-emerald-400' : 'text-red-400'}`}>
               {ipo.currentGmp != null ? money(ipo.currentGmp) : '₹0'}
             </span>
-            {ipo.gmpTrend === 'up' || (ipo.prevGmp != null && (ipo.currentGmp ?? 0) > ipo.prevGmp) ? (
-              <span className="inline-flex items-center text-[10px] font-extrabold text-emerald-400 shrink-0">
-                <ArrowUp size={10} className="stroke-[3]" />
-              </span>
-            ) : ipo.gmpTrend === 'down' || (ipo.prevGmp != null && (ipo.currentGmp ?? 0) < ipo.prevGmp) ? (
-              <span className="inline-flex items-center text-[10px] font-extrabold text-red-400 shrink-0">
-                <ArrowDown size={10} className="stroke-[3]" />
-              </span>
-            ) : null}
+            <Sparkline trend={trend} width={30} height={12} />
           </div>
           {ipo.gmpPct != null && (
             <div className="text-[10px] text-slate-400 num truncate">{pct(ipo.gmpPct)}</div>
@@ -236,20 +270,20 @@ export function MobileAvailableIpoCard({
         </div>
 
         <div className="min-w-0">
-          <div className="card-label text-[9px] sm:text-[10px] truncate">EST. LISTING</div>
-          <div className="num font-semibold text-slate-200 text-xs sm:text-sm mt-0.5 truncate">
+          <div className="card-label">EST. LISTING</div>
+          <div className="num font-semibold text-slate-200 text-xs mt-0.5 truncate">
             {ipo.estListing != null ? inr(ipo.estListing) : '—'}
           </div>
         </div>
 
         <div className="min-w-0">
-          <div className="card-label text-[9px] sm:text-[10px] truncate">PROFIT / LOT</div>
+          <div className="card-label">GAIN / LOT</div>
           <div
-            className={`num font-bold text-xs sm:text-sm mt-0.5 truncate ${
+            className={`num font-bold text-xs mt-0.5 truncate ${
               (estimatedLotProfit ?? 0) > 0
-                ? 'text-emerald-300'
+                ? 'text-emerald-400'
                 : (estimatedLotProfit ?? 0) < 0
-                ? 'text-red-300'
+                ? 'text-red-400'
                 : 'text-slate-400'
             }`}
           >
@@ -259,18 +293,18 @@ export function MobileAvailableIpoCard({
       </div>
 
       <div className="flex items-center justify-between gap-2 pt-0.5">
-        <div className="text-[11px] text-slate-400 truncate flex-1">
+        <div className="text-[10px] text-slate-500 truncate flex-1">
           {ipo.notes ? ipo.notes.replace(/^Bidding:\s*/i, '') : 'Dates TBA'}
         </div>
-        <div className="shrink-0">
+        <div>
           {isApplied ? (
-            <div className="inline-flex items-center gap-1">
-              <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-500/20 px-2.5 py-1 text-[11px] font-semibold text-emerald-300 border border-emerald-500/30">
+            <div className="inline-flex items-center gap-1.5">
+              <span className="rounded bg-blue-500/15 border border-blue-500/30 px-2 py-0.5 text-[10px] font-bold text-blue-300">
                 Applied ({ipo.lotsApplied}L)
               </span>
               <button
                 onClick={(e) => onUnapply(ipo, e)}
-                className="text-[11px] text-slate-400 hover:text-red-400 underline transition px-1 py-1"
+                className="text-[10px] text-slate-400 hover:text-red-400 transition"
               >
                 Remove
               </button>
@@ -278,7 +312,7 @@ export function MobileAvailableIpoCard({
           ) : (
             <button
               onClick={() => onApply(ipo)}
-              className="inline-flex items-center gap-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 px-3 py-1.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-500 hover:text-white active:scale-95 transition whitespace-nowrap"
+              className="inline-flex items-center gap-1 rounded bg-blue-600/20 border border-blue-500/30 px-2.5 py-1 text-[11px] font-semibold text-blue-300 hover:bg-blue-600/30 active:scale-95 transition"
             >
               + Mark Applied
             </button>

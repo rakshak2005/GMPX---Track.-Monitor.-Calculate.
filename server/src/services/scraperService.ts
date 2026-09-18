@@ -38,8 +38,8 @@ async function fetchIpoGuruDetail(url: string | null): Promise<{ lotSize: number
     // 1. Lot size from table or text
     let lotSize: number | null = null;
     const lotMatch = html.match(/Lot\s+Size\s*<\/td>\s*<td[^>]*>\s*(\d+)\s*Shares/i) ||
-                     html.match(/Retail\s*\(min\)[^<]*<\/td>\s*<td[^>]*>[^<]*<\/td>\s*<td[^>]*>\s*(\d+)/i) ||
-                     html.match(/(\d+)\s*Shares/i);
+      html.match(/Retail\s*\(min\)[^<]*<\/td>\s*<td[^>]*>[^<]*<\/td>\s*<td[^>]*>\s*(\d+)/i) ||
+      html.match(/(\d+)\s*Shares/i);
     if (lotMatch) {
       const parsed = parseInt(lotMatch[1], 10);
       if (Number.isFinite(parsed) && parsed > 0) lotSize = parsed;

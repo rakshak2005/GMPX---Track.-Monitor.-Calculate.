@@ -2,14 +2,54 @@ import type { Request, Response, NextFunction } from 'express';
 import { validateIpoInput } from '../utils/calculations.js';
 import {
   appendSubHistory,
-  createIpo, deleteIpo, getIpo, getSubHistory, listIpos, updateIpo,
+  createIpo, deleteIpo, getIpo, getSubHistory, listIpos, updateIpo, updateIpoStatus,
 } from '../services/ipoStore.js';
 import { refreshGmpForIpo } from '../services/gmpService.js';
+import { checkIpoAllotment, getKfintechIpos, getMufgIpos, getBigshareIpos } from '../services/registrarService.js';
 
 const wrap = (fn: (req: Request, res: Response, next: NextFunction) => Promise<unknown>) =>
   (req: Request, res: Response, next: NextFunction) => fn(req, res, next).catch(next);
 
+export const registrarActiveIssuesHandler = wrap(async (_req, res) => {
+  const [kfin, mufg, bigshare] = await Promise.all([
+    getKfintechIpos().catch(() => []),
+    getMufgIpos().catch(() => []),
+    getBigshareIpos().catch(() => []),
+  ]);
+  res.json({
+    data: {
+      kfintech: kfin,
+      mufg: mufg,
+      bigshare: bigshare,
+    },
+  });
+});
+
 const ALLOWED_SORT = new Set(['gmp', 'gmpPct', 'profit', 'subscription', 'listingDate', 'investment', 'createdAt', 'name']);
+
+function getRegistrarName(name: string, notes?: string): string {
+  if (notes) {
+    const m = notes.match(/Registrar:\s*([^\n;]+)/i);
+    if (m && m[1].trim()) return m[1].trim();
+  }
+  const norm = (name || '').toLowerCase();
+  if (
+    norm.includes('rentomojo') ||
+    norm.includes('ss retail') ||
+    norm.includes('century') ||
+    norm.includes('lcc') ||
+    norm.includes('steamhouse')
+  ) {
+    return 'KFin Technologies (KFintech)';
+  }
+  if (norm.includes('jindal') || norm.includes('apana') || norm.includes('vinod')) {
+    return 'Bigshare Services';
+  }
+  if (norm.includes('pranav') || norm.includes('prasol') || norm.includes('klm') || norm.includes('kosamattam') || norm.includes('mufg')) {
+    return 'MUFG Intime India (Link Intime)';
+  }
+  return 'KFintech / MUFG Intime';
+}
 
 function derived(ipo: Record<string, unknown>) {
   const issuePrice = Number(ipo.issuePrice ?? 0);
@@ -22,7 +62,8 @@ function derived(ipo: Record<string, unknown>) {
   const estListing = gmp !== null ? issuePrice + gmp : null;
   const estProfit = gmp !== null && qty > 0 ? gmp * qty : gmp !== null ? 0 : null;
   const lotProfit = gmp !== null && lotSize > 0 ? gmp * lotSize : null;
-  return { quantity: qty, investment, gmpPct, estListing, estProfit, lotProfit };
+  const registrar = getRegistrarName(String(ipo.companyName || ipo.name || ''), String(ipo.notes || ''));
+  return { quantity: qty, investment, gmpPct, estListing, estProfit, lotProfit, registrar };
 }
 
 export const listIposHandler = wrap(async (req: any, res) => {
@@ -145,3 +186,24 @@ export const subHistoryHandler = wrap(async (req, res) => {
   if (!ipo) return res.status(404).json({ error: 'IPO not found.' });
   res.json({ data: await getSubHistory(req.params.id) });
 });
+
+export const checkAllotmentHandler = wrap(async (req: any, res) => {
+  const ipo = await getIpo(req.params.id);
+  if (!ipo) return res.status(404).json({ error: 'IPO not found.' });
+
+  const pan = String(req.body?.pan || req.query?.pan || '').trim().toUpperCase();
+  if (!pan || pan.length < 10) {
+    return res.status(400).json({ error: 'Valid 10-character PAN is required to check allotment.' });
+  }
+
+  const result = await checkIpoAllotment(ipo.companyName || ipo.name, pan);
+
+  if (result.found && (result.status === 'ALLOTTED' || result.status === 'NOT_ALLOTTED')) {
+    const newStatus = result.status === 'ALLOTTED' ? 'Allotted' : 'Not Allotted';
+    const allottedLots = result.status === 'ALLOTTED' ? Math.max(1, Math.floor((result.allottedShares || 0) / (ipo.lotSize || 1))) : 0;
+    await updateIpoStatus(ipo.id, newStatus, req.userId, allottedLots);
+  }
+
+  res.json({ data: result });
+});
+

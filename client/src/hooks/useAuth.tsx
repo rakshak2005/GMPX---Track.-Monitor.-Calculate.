@@ -9,8 +9,11 @@ export interface User {
   preferences: {
     marketFilter?: 'All' | 'Open' | 'Upcoming' | 'Closed';
     sort?: string;
+    pan?: string;
+    alertEmail?: string;
   };
 }
+
 
 
 interface AuthContextType {

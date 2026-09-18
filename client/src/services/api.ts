@@ -68,6 +68,35 @@ export const api = {
       body: JSON.stringify({ applied, lotsApplied, issuePrice }),
     }),
   syncLive: () => req<{ totalScraped: number; created: number; updated: number; errors: string[] }>('/api/ipos/sync', { method: 'POST' }),
+  checkAllotment: (id: string, pan: string) =>
+    req<{
+      found: boolean;
+      status: 'ALLOTTED' | 'NOT_ALLOTTED' | 'PENDING' | 'NOT_FOUND';
+      registrar: string;
+      companyName: string;
+      pan: string;
+      applicantName?: string;
+      appliedShares?: number;
+      allottedShares?: number;
+      appNo?: string;
+      dpClid?: string;
+      message?: string;
+    }>(`/api/ipos/${id}/check-allotment`, {
+      method: 'POST',
+      body: JSON.stringify({ pan }),
+    }),
+  getRegistrarIssues: () =>
+    req<{
+      kfintech: { clientId: string; name: string }[];
+      mufg: { clientId: string; name: string }[];
+      bigshare: { clientId: string; name: string }[];
+    }>('/api/ipos/registrar-issues'),
+  testEmail: (email: string) =>
+    req<{ success: boolean; message: string }>('/api/notify/email-test', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
   importBackup: (data: unknown[]) =>
     req<{ imported: number; errors: string[] }>('/api/import', { method: 'POST', body: JSON.stringify({ data }) }),
 };
+

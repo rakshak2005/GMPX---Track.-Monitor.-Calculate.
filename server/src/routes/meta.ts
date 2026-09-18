@@ -33,3 +33,34 @@ metaRouter.get('/events', (req, res) => {
     remove();
   });
 });
+
+metaRouter.post('/notify/email-test', async (req, res) => {
+  const { email, ipoName, status, shares, registrar } = req.body ?? {};
+  const { sendGmailNotification, formatEmailAllotmentAlert } = await import('../services/emailService.js');
+
+  if (status) {
+    const alertData = formatEmailAllotmentAlert(
+      ipoName || 'Tata Technologies Ltd (Sample Allotment)',
+      status === 'NOT_ALLOTTED' ? 'NOT_ALLOTTED' : 'ALLOTTED',
+      shares || 30,
+      registrar || 'Link Intime India Pvt Ltd'
+    );
+    const result = await sendGmailNotification({
+      to: email,
+      subject: alertData.subject,
+      text: alertData.text,
+      html: alertData.html,
+    });
+    return res.json({ data: result });
+  }
+
+  const result = await sendGmailNotification({
+    to: email,
+    subject: `🚀 GMPX Terminal - Gmail Allotment Alerts Active!`,
+    text: `Your email is now connected to the GMPX Automated 7:00 PM Allotment Poller Engine.\n\nYou will receive instant notifications whenever an IPO allotment result is declared.`,
+  });
+  res.json({ data: result });
+});
+
+
+

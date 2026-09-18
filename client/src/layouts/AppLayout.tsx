@@ -1,20 +1,49 @@
+import React, { useEffect, useState } from 'react';
 import { NavLink, Outlet, Link } from 'react-router-dom';
-import { useEffect, useState } from 'react';
 import {
-  LayoutDashboard, Briefcase, Activity, BarChart3, Wallet, CalendarDays, Settings as SettingsIcon, Plus, Menu, X, User, LogIn, LogOut
+  Radio, TrendingUp, BarChart3, BriefcaseBusiness, WalletCards, CalendarDays, Settings2, Menu, X, User, LogIn, LogOut, CheckCircle2, ShieldCheck, ExternalLink, Activity, type LucideIcon
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth.js';
 import { AuthModal } from '../components/AuthModal.js';
 
-const NAV = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
-  { to: '/ipos', label: 'My IPOs', icon: Briefcase },
-  { to: '/gmp', label: 'GMP Tracker', icon: Activity },
-  { to: '/subscription', label: 'Subscription', icon: BarChart3 },
-  { to: '/profit', label: 'Profit Tracker', icon: Wallet },
-  { to: '/calendar', label: 'Calendar', icon: CalendarDays },
-  { to: '/settings', label: 'Settings', icon: SettingsIcon },
+interface NavSection {
+  title: string;
+  items: { to: string; label: string; icon: LucideIcon; end?: boolean; isExternal?: boolean; badge?: string }[];
+}
+
+const NAV_SECTIONS: NavSection[] = [
+  {
+    title: 'MARKET',
+    items: [
+      { to: '/', label: 'Live IPOs', icon: Radio, end: true },
+      { to: '/gmp', label: 'GMP Pulse', icon: TrendingUp },
+      { to: '/subscription', label: 'Subscription', icon: BarChart3 },
+      {
+        to: 'https://www.nseindia.com/market-data/new-stock-exchange-listings-today',
+        label: 'NSE Pre-Listing',
+        icon: Activity,
+        isExternal: true,
+        badge: 'LIVE',
+      },
+    ],
+  },
+  {
+    title: 'MY ACTIVITY',
+    items: [
+      { to: '/ipos', label: 'My IPO Book', icon: BriefcaseBusiness },
+      { to: '/profit', label: 'Profit Tracker', icon: WalletCards },
+      { to: '/allotment', label: 'Allotment Desk', icon: ShieldCheck },
+      { to: '/calendar', label: 'IPO Calendar', icon: CalendarDays },
+    ],
+  },
+  {
+    title: 'SYSTEM',
+    items: [
+      { to: '/settings', label: 'Settings', icon: Settings2 },
+    ],
+  },
 ];
+
 
 export function Toasts() {
   const [toasts, setToasts] = useState<{ id: number; title: string; body: string }[]>([]);
@@ -48,89 +77,191 @@ export function AppLayout({ onAdd }: { onAdd?: () => void }) {
   return (
     <div className="min-h-screen w-full max-w-full overflow-x-clip">
       {/* Mobile top header bar */}
-      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-white/10 bg-[#070b18]/90 px-3.5 py-2.5 sm:px-4 sm:py-3 backdrop-blur md:hidden w-full">
+      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-cyan-500/15 bg-[#090F1E]/95 px-3.5 py-2.5 backdrop-blur-md md:hidden w-full shadow-lg">
         <Link to="/" className="flex items-center gap-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-violet-600 font-black text-sm text-white shadow-lg shadow-blue-500/20">
-            X
-          </span>
+          <img
+            src="/logo.png"
+            alt="GMPX"
+            className="h-7 w-7 object-contain drop-shadow-[0_2px_10px_rgba(234,179,8,0.4)]"
+          />
           <div>
-            <span className="text-base font-black tracking-tight text-white">GMPX</span>
-            <span className="ml-1 text-[10px] text-blue-400 font-medium">LIVE</span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-base font-black tracking-tight text-white">GMPX</span>
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            </div>
+            <div className="text-[9px] uppercase tracking-wider font-semibold text-slate-400">
+              Indian IPO Intelligence
+            </div>
           </div>
         </Link>
         <div className="flex items-center gap-2">
           {user ? (
             <button
               onClick={() => setMobileMenuOpen(true)}
-              className="flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-300"
+              className="flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[11px] font-semibold text-emerald-300"
             >
-              <User size={13} />
+              <User size={12} />
               <span className="max-w-[70px] truncate">{user.name || user.email.split('@')[0]}</span>
             </button>
           ) : (
             <button
               onClick={() => setAuthOpen(true)}
-              className="flex items-center gap-1 rounded-lg border border-blue-500/30 bg-blue-500/15 px-2.5 py-1 text-xs font-semibold text-blue-300"
+              className="flex items-center gap-1 rounded-md border border-blue-500/30 bg-blue-500/15 px-2 py-1 text-[11px] font-semibold text-blue-300"
             >
-              <LogIn size={13} />
+              <LogIn size={12} />
               <span>Sign In</span>
             </button>
           )}
           <button
             onClick={() => setMobileMenuOpen(true)}
             aria-label="Open menu"
-            className="rounded-lg border border-white/10 p-1.5 text-slate-300 hover:bg-white/5 active:scale-95"
+            className="rounded-md border border-white/[0.08] p-1.5 text-slate-300 hover:bg-white/5 active:scale-95"
           >
-            <Menu size={20} />
+            <Menu size={18} />
           </button>
         </div>
       </header>
 
-      {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 hidden w-60 flex-col border-r border-white/5 bg-[#070b18]/90 p-5 md:flex">
-        <div className="flex items-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-violet-600 font-black">X</span>
+      {/* Desktop financial terminal sidebar */}
+      <aside className="fixed inset-y-0 left-0 hidden w-60 flex-col border-r border-cyan-500/10 bg-gradient-to-b from-[#0B1124] via-[#090D1C] to-[#070A16] p-4 md:flex shadow-2xl z-20">
+        {/* Brand identity */}
+        <Link to="/" className="flex items-center gap-2.5 pb-4 border-b border-white/[0.08]">
+          <img
+            src="/logo.png"
+            alt="GMPX"
+            className="h-8 w-8 object-contain drop-shadow-[0_2px_12px_rgba(234,179,8,0.45)]"
+          />
           <div>
-            <div className="text-sm font-bold">IPO Command Center</div>
-            <div className="text-[11px] text-slate-500">GMPX · Automated Tracker</div>
+            <div className="text-base font-black tracking-tight text-white flex items-center gap-1.5">
+              <span className="bg-gradient-to-r from-white via-slate-100 to-slate-300 bg-clip-text text-transparent">GMPX</span>
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            </div>
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-cyan-400/80">
+              Indian IPO Intelligence
+            </div>
           </div>
-        </div>
-        <nav className="mt-6 space-y-1">
-          {NAV.map((n) => (
-            <NavLink
-              key={n.to}
-              to={n.to}
-              end={n.end}
-              className={({ isActive }) =>
-                `flex items-center gap-3 rounded-lg px-3 py-2 text-sm ${isActive ? 'bg-white/10 text-white' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`
-              }
-            >
-              <n.icon size={17} /> {n.label}
-            </NavLink>
+        </Link>
+
+        {/* Financial Terminal Navigation Rail */}
+        <nav className="mt-4 flex-1 space-y-4 overflow-y-auto no-scrollbar">
+          {NAV_SECTIONS.map((section) => (
+            <div key={section.title}>
+              <div className="px-2 pb-1.5 text-[10px] font-bold tracking-widest text-slate-500 uppercase">
+                {section.title}
+              </div>
+              <div className="space-y-0.5">
+                {section.items.map((n) =>
+
+                  n.isExternal ? (
+                    <a
+                      key={n.to}
+                      href={n.to}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group relative flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-400 hover:bg-white/[0.04] hover:text-cyan-300 transition-all"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <n.icon
+                          size={15}
+                          className="shrink-0 text-amber-400 group-hover:text-amber-300 transition-colors animate-pulse"
+                        />
+                        <span className="truncate">{n.label}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {n.badge && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-mono">
+                            {n.badge}
+                          </span>
+                        )}
+                        <ExternalLink size={12} className="text-slate-500 group-hover:text-cyan-400 shrink-0" />
+                      </div>
+                    </a>
+                  ) : (
+                    <NavLink
+                      key={n.to}
+                      to={n.to}
+                      end={n.end}
+                      className={({ isActive }) =>
+                        `group relative flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${
+                          isActive
+                            ? 'bg-gradient-to-r from-blue-600/25 via-blue-500/15 to-transparent text-white font-semibold border border-blue-500/30 shadow-[0_0_15px_rgba(37,99,235,0.2)]'
+                            : 'text-slate-400 hover:bg-white/[0.04] hover:text-slate-200'
+                        }`
+                      }
+                    >
+                      {({ isActive }) => (
+                        <>
+                          {/* Active blue left rail indicator */}
+                          {isActive && (
+                            <span className="absolute -left-4 top-1.5 bottom-1.5 w-[3.5px] rounded-r bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.9)]" />
+                          )}
+                          <n.icon
+                            size={15}
+                            className={`shrink-0 transition-colors ${
+                              isActive ? 'text-cyan-400' : 'text-slate-500 group-hover:text-slate-300'
+                            }`}
+                          />
+                          <span className="truncate">{n.label}</span>
+                        </>
+                      )}
+                    </NavLink>
+                  )
+                )}
+              </div>
+            </div>
           ))}
         </nav>
-        <div className="mt-auto rounded-xl border border-white/5 bg-white/[0.03] p-3 text-xs text-slate-400">
+
+
+        {/* Compact User / Status Terminal Area */}
+        <div className="mt-auto pt-3 border-t border-white/[0.08]">
           {user ? (
-            <div>
+            <div className="terminal-subpanel p-2.5 shadow-md">
               <div className="flex items-center justify-between">
-                <div className="font-semibold text-slate-200 truncate">{user.name || user.email.split('@')[0]}</div>
-                <button onClick={logout} className="text-[11px] text-slate-500 hover:text-red-400 transition">
+                <div className="min-w-0 pr-1">
+                  <div className="truncate text-xs font-bold text-slate-100">
+                    {user.name || user.email.split('@')[0]}
+                  </div>
+                  <div className="text-[10px] text-cyan-400 font-medium">Retail Investor</div>
+                </div>
+                <Link
+                  to="/settings"
+                  className="rounded p-1 text-slate-400 hover:bg-white/5 hover:text-white transition"
+                  title="Settings"
+                >
+                  <Settings2 size={14} />
+                </Link>
+              </div>
+              <div className="mt-1.5 flex items-center justify-between border-t border-white/[0.06] pt-1.5 text-[10px]">
+                <span className="flex items-center gap-1.5 text-emerald-400 font-medium">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Connected
+                </span>
+                <button
+                  onClick={logout}
+                  className="text-slate-400 hover:text-red-400 transition font-medium"
+                >
                   Logout
                 </button>
               </div>
-              <div className="mt-0.5 text-[11px] text-emerald-400">● Neon Cloud Connected</div>
             </div>
           ) : (
-            <div>
-              <div className="font-semibold text-slate-200">Guest Mode</div>
-              <div className="mt-1 flex gap-1.5">
-                <button
-                  onClick={() => setAuthOpen(true)}
-                  className="w-full rounded-lg bg-blue-500/20 border border-blue-500/30 px-2.5 py-1.5 text-center text-xs font-semibold text-blue-300 hover:bg-blue-500/30 transition"
-                >
-                  Sign In / Register
-                </button>
+            <div className="terminal-subpanel p-2.5 shadow-md">
+              <div className="flex items-center justify-between mb-1.5">
+                <div>
+                  <div className="text-xs font-bold text-slate-200">Terminal Guest</div>
+                  <div className="text-[10px] text-slate-400">Local Session</div>
+                </div>
+                <Link to="/settings" className="p-1 text-slate-400 hover:text-white">
+                  <Settings2 size={14} />
+                </Link>
               </div>
+              <button
+                onClick={() => setAuthOpen(true)}
+                className="w-full flex items-center justify-center gap-1.5 rounded-md bg-blue-600/25 border border-blue-500/40 py-1.5 text-center text-xs font-semibold text-blue-200 hover:bg-blue-600/40 transition shadow-[0_0_12px_rgba(59,130,246,0.3)]"
+              >
+                <LogIn size={12} /> Sign In
+              </button>
             </div>
           )}
         </div>
@@ -148,7 +279,7 @@ export function AppLayout({ onAdd }: { onAdd?: () => void }) {
       </div>
 
       {/* Mobile bottom nav */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t border-white/10 bg-[#070b18]/95 px-2 py-1.5 backdrop-blur md:hidden safe-area-pb">
+      <nav className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t border-white/[0.08] bg-[#090D17]/95 px-2 py-1.5 backdrop-blur md:hidden safe-area-pb">
         <NavLink
           to="/"
           end
@@ -158,8 +289,8 @@ export function AppLayout({ onAdd }: { onAdd?: () => void }) {
             }`
           }
         >
-          <LayoutDashboard size={20} />
-          <span>Dashboard</span>
+          <Radio size={18} />
+          <span>Live IPOs</span>
         </NavLink>
 
         <NavLink
@@ -170,8 +301,8 @@ export function AppLayout({ onAdd }: { onAdd?: () => void }) {
             }`
           }
         >
-          <Briefcase size={20} />
-          <span>My IPOs</span>
+          <BriefcaseBusiness size={18} />
+          <span>IPO Book</span>
         </NavLink>
 
         <NavLink
@@ -182,8 +313,8 @@ export function AppLayout({ onAdd }: { onAdd?: () => void }) {
             }`
           }
         >
-          <Activity size={20} />
-          <span>GMP</span>
+          <TrendingUp size={18} />
+          <span>Pulse</span>
         </NavLink>
 
         <NavLink
@@ -194,7 +325,7 @@ export function AppLayout({ onAdd }: { onAdd?: () => void }) {
             }`
           }
         >
-          <CalendarDays size={20} />
+          <CalendarDays size={18} />
           <span>Calendar</span>
         </NavLink>
 
@@ -204,7 +335,7 @@ export function AppLayout({ onAdd }: { onAdd?: () => void }) {
             mobileMenuOpen ? 'text-blue-400 font-semibold' : 'text-slate-400 hover:text-slate-200'
           }`}
         >
-          <Menu size={20} />
+          <Menu size={18} />
           <span>More</span>
         </button>
       </nav>
@@ -217,49 +348,90 @@ export function AppLayout({ onAdd }: { onAdd?: () => void }) {
             className="relative ml-auto flex h-full w-4/5 max-w-xs flex-col bg-[#0b1020] border-l border-white/10 p-5 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between pb-4 border-b border-white/10">
+            <div className="flex items-center justify-between pb-3.5 border-b border-white/[0.08]">
               <div className="flex items-center gap-2">
-                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-violet-600 font-bold text-white text-xs">
-                  X
-                </span>
-                <span className="font-bold text-white">GMPX Menu</span>
+                <img
+                  src="/logo.png"
+                  alt="GMPX"
+                  className="h-7 w-7 object-contain drop-shadow-[0_2px_8px_rgba(234,179,8,0.35)]"
+                />
+                <div>
+                  <div className="font-bold text-white tracking-tight text-sm">GMPX</div>
+                  <div className="text-[9px] text-slate-400 uppercase tracking-wider font-semibold">IPO Terminal</div>
+                </div>
               </div>
               <button
                 onClick={() => setMobileMenuOpen(false)}
                 className="rounded-lg p-1.5 text-slate-400 hover:text-white"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
 
-            <nav className="mt-4 flex-1 space-y-1 overflow-y-auto">
-              {NAV.map((n) => (
-                <NavLink
-                  key={n.to}
-                  to={n.to}
-                  end={n.end}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition ${
-                      isActive ? 'bg-blue-500/20 text-blue-300 font-semibold' : 'text-slate-300 hover:bg-white/5'
-                    }`
-                  }
-                >
-                  <n.icon size={18} />
-                  <span>{n.label}</span>
-                </NavLink>
+            <nav className="mt-4 flex-1 space-y-3.5 overflow-y-auto no-scrollbar">
+              {NAV_SECTIONS.map((section) => (
+                <div key={section.title}>
+                  <div className="px-2 pb-1 text-[9px] font-bold tracking-widest text-slate-500 uppercase">
+                    {section.title}
+                  </div>
+                  <div className="space-y-0.5">
+                    {section.items.map((n) =>
+                      n.isExternal ? (
+                        <a
+                          key={n.to}
+                          href={n.to}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="flex items-center justify-between rounded-lg px-2.5 py-2 text-xs font-medium text-slate-300 hover:bg-white/5 hover:text-cyan-300 transition"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <n.icon size={15} className="text-amber-400" />
+                            <span>{n.label}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            {n.badge && (
+                              <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-mono">
+                                {n.badge}
+                              </span>
+                            )}
+                            <ExternalLink size={12} className="text-slate-500" />
+                          </div>
+                        </a>
+                      ) : (
+                        <NavLink
+                          key={n.to}
+                          to={n.to}
+                          end={n.end}
+                          onClick={() => setMobileMenuOpen(false)}
+                          className={({ isActive }) =>
+                            `flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium transition ${
+                              isActive
+                                ? 'bg-blue-500/20 text-blue-300 font-semibold border-l-2 border-blue-500'
+                                : 'text-slate-300 hover:bg-white/5'
+                            }`
+                          }
+                        >
+                          <n.icon size={15} />
+                          <span>{n.label}</span>
+                        </NavLink>
+                      )
+                    )}
+                  </div>
+
+                </div>
               ))}
             </nav>
 
-            <div className="mt-auto border-t border-white/10 pt-4">
+            <div className="mt-auto border-t border-white/[0.08] pt-3">
               {user ? (
-                <div className="rounded-xl bg-white/[0.03] border border-white/5 p-3">
+                <div className="rounded-lg bg-[#101521] border border-white/[0.08] p-2.5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-xs font-bold text-white truncate max-w-[140px]">
-                        {user.name || user.email}
+                      <div className="text-xs font-bold text-white truncate max-w-[130px] uppercase">
+                        {user.name || user.email.split('@')[0]}
                       </div>
-                      <div className="text-[10px] text-emerald-400 mt-0.5">● Neon Connected</div>
+                      <div className="text-[10px] text-emerald-400 mt-0.5">● Connected</div>
                     </div>
                     <button
                       onClick={() => {
@@ -268,7 +440,7 @@ export function AppLayout({ onAdd }: { onAdd?: () => void }) {
                       }}
                       className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 p-1"
                     >
-                      <LogOut size={13} /> Logout
+                      <LogOut size={12} /> Logout
                     </button>
                   </div>
                 </div>
@@ -278,9 +450,9 @@ export function AppLayout({ onAdd }: { onAdd?: () => void }) {
                     setMobileMenuOpen(false);
                     setAuthOpen(true);
                   }}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-500 py-2.5 text-xs font-semibold text-white hover:bg-blue-600 transition"
+                  className="w-full flex items-center justify-center gap-2 rounded-lg bg-blue-600/30 border border-blue-500/40 py-2 text-xs font-semibold text-blue-200 hover:bg-blue-600/40 transition"
                 >
-                  <LogIn size={15} /> Sign In / Register
+                  <LogIn size={13} /> Sign In
                 </button>
               )}
             </div>

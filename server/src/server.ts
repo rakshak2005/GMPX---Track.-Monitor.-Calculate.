@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import { env } from './config/env.js';
 import { connectDb } from './config/db.js';
 import { startGmpScheduler } from './jobs/gmpScheduler.js';
+import { startAllotmentPoller } from './services/allotmentPoller.js';
 import { optionalAuth } from './middleware/auth.js';
 import { authRouter } from './routes/auth.js';
 import { ipoRouter } from './routes/ipos.js';
@@ -67,6 +68,7 @@ async function main(): Promise<void> {
 
   app.listen(env.PORT, () => console.log(`[server] GMPulse API on :${env.PORT} (provider=${env.GMP_PROVIDER})`));
   startGmpScheduler();
+  startAllotmentPoller();
 }
 
 main().catch((e) => {

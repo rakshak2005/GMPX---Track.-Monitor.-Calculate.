@@ -393,6 +393,48 @@ export async function setUserIpoApplication(
   }
 }
 
+export async function updateIpoStatus(
+  ipoId: string,
+  status: string,
+  userId?: string | null,
+  allottedLots: number = 0
+): Promise<void> {
+  if (isNeonConnected()) {
+    if (userId) {
+      await query(
+        `UPDATE user_ipos 
+         SET status = $1, allotted_lots = $2, updated_at = NOW() 
+         WHERE user_id = $3 AND ipo_id = $4`,
+        [status, allottedLots, userId, ipoId]
+      );
+    } else {
+      // If no specific userId, update all active applications for this IPO
+      await query(
+        `UPDATE user_ipos 
+         SET status = $1, allotted_lots = $2, updated_at = NOW() 
+         WHERE ipo_id = $3`,
+        [status, allottedLots, ipoId]
+      );
+    }
+    return;
+  }
+
+  if (userId) {
+    const userMap = mem.userIpos.get(userId);
+    const existing = userMap?.get(ipoId);
+    if (existing) {
+      userMap?.set(ipoId, { ...existing, status });
+    }
+  }
+
+  const existingIpo = mem.ipos.get(ipoId);
+  if (existingIpo) {
+    existingIpo.status = status;
+    existingIpo.allottedLots = allottedLots;
+    existingIpo.updatedAt = new Date().toISOString();
+  }
+}
+
 export async function deleteIpo(id: string): Promise<boolean> {
   if (isNeonConnected()) {
     const res = await query(`DELETE FROM ipos WHERE id = $1`, [id]);

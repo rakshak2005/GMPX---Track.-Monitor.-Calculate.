@@ -33,6 +33,7 @@ export interface Ipo {
   subscription?: SubscriptionBreakdown;
   actualListingPrice?: number | null;
   notes?: string;
+  registrar?: string | null;
   // derived (server or client computed)
   quantity?: number;
   investment?: number;

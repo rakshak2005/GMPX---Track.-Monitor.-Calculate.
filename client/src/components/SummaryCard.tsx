@@ -1,22 +1,44 @@
-export function SummaryCard({ label, value, sub, accent }: { label: string; value: string; sub: string; accent?: 'green' | 'red' }) {
-  const color = accent === 'green' ? 'text-emerald-300' : accent === 'red' ? 'text-red-300' : 'text-white';
+export function SummaryCard({
+  label,
+  value,
+  sub,
+  accent,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  accent?: 'green' | 'red';
+}) {
+  const color =
+    accent === 'green'
+      ? 'text-emerald-400'
+      : accent === 'red'
+      ? 'text-red-400'
+      : 'text-slate-100';
+
   return (
-    <div className="glass p-3 sm:p-5 flex flex-col justify-between">
+    <div className="terminal-panel p-3 sm:p-4 flex flex-col justify-between">
       <div>
-        <div className="card-label text-[9px] sm:text-xs truncate">{label}</div>
-        <div className={`num mt-1 sm:mt-2 text-xl sm:text-3xl font-black ${color} truncate`}>{value}</div>
+        <div className="card-label truncate">{label}</div>
+        <div className={`num mt-1.5 text-2xl sm:text-3xl font-extrabold tracking-tight ${color} truncate`}>
+          {value}
+        </div>
       </div>
-      <div className="mt-1 sm:mt-2 text-[10px] sm:text-xs text-slate-400 line-clamp-1">{sub}</div>
+      {sub && (
+        <div className="mt-2 text-[11px] text-slate-400 truncate">
+          {sub}
+        </div>
+      )}
     </div>
   );
 }
 
 export function SkeletonCard() {
   return (
-    <div className="glass p-5">
-      <div className="skeleton h-3 w-24" />
-      <div className="skeleton mt-3 h-8 w-32" />
-      <div className="skeleton mt-2 h-3 w-40" />
+    <div className="terminal-panel p-4">
+      <div className="skeleton h-3 w-20" />
+      <div className="skeleton mt-3 h-7 w-28" />
+      <div className="skeleton mt-2 h-2.5 w-36" />
     </div>
   );
 }

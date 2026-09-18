@@ -44,9 +44,11 @@ export function AuthModal({ open, onClose }: { open: boolean; onClose: () => voi
         </button>
 
         <div className="text-center mb-5">
-          <div className="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 font-bold text-white">
-            {isRegister ? <UserPlus size={20} /> : <LogIn size={20} />}
-          </div>
+          <img
+            src="/logo.png"
+            alt="GMPX"
+            className="mx-auto mb-2 h-12 w-12 object-contain drop-shadow-[0_4px_12px_rgba(234,179,8,0.25)]"
+          />
           <h2 className="text-lg font-bold text-white">
             {isRegister ? 'Create Your Account' : 'Sign in to GMPX'}
           </h2>

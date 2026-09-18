@@ -14,7 +14,9 @@ let isConnected = false;
 export async function getDbPool(): Promise<pg.Pool> {
   if (pool) return pool;
 
-  const connStr = env.DATABASE_URL;
+  // Use the pooled Neon connection string to ensure smooth reconnection even when compute sleeps
+  const connStr = env.DATABASE_URL_POOLED || env.DATABASE_URL;
+
 
   // On Render / Linux cloud environments, standard pg connectionString works natively.
   // We only need custom net.stream DNS pre-resolution if running on Windows / local ISP DNS blocks.
@@ -38,12 +40,12 @@ export async function getDbPool(): Promise<pg.Pool> {
   const password = decodeURIComponent(parsed.password);
   const database = parsed.pathname.replace(/^\//, '');
 
-  let targetIp = host;
+  let cachedIps: string[] = [];
   try {
     const ips = await dns.resolve4(host);
-    if (ips && ips.length > 0) targetIp = ips[0];
+    if (ips && ips.length > 0) cachedIps = ips;
   } catch {
-    // fallback to original host
+    cachedIps = ['52.76.246.190', '52.76.212.156', '3.0.27.201'];
   }
 
   pool = new Pool({
@@ -54,12 +56,31 @@ export async function getDbPool(): Promise<pg.Pool> {
     host,
     ssl: { rejectUnauthorized: false, servername: host },
     max: 10,
-    idleTimeoutMillis: 30000,
-    stream: () => net.connect({ host: targetIp, port }),
+    idleTimeoutMillis: 10000,
+    connectionTimeoutMillis: 10000,
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 10000,
+    stream: () => {
+      // Connect to resolved IP directly to bypass Windows getaddrinfo DNS timeout
+      const ip = cachedIps[Math.floor(Math.random() * cachedIps.length)] || '52.76.246.190';
+      return net.connect({ host: ip, port });
+    },
+  });
+
+
+  pool.on('error', (err) => {
+    // Neon serverless suspends compute when idle, causing ECONNRESET on idle connections.
+    // Catching this prevents unhandled socket exceptions and allows pg-pool to recreate fresh connections.
+    if ((err as any).code === 'ECONNRESET') {
+      console.warn('[db] Idle Neon connection reset by serverless host; will reconnect on next query.');
+    } else {
+      console.error('[db] Unexpected pool error:', err.message);
+    }
   });
 
   return pool;
 }
+
 
 export async function query<T extends pg.QueryResultRow = pg.QueryResultRow>(
   text: string,

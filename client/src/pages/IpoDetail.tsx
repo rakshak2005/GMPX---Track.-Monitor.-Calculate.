@@ -18,28 +18,28 @@ const STATUSES = ['Applied', 'Allotment Pending', 'Allotted', 'Not Allotted', 'R
 function GmpHero({ ipo }: { ipo: Ipo }) {
   const g = ipo.currentGmp;
   return (
-    <div className="glass grid gap-4 p-4 sm:p-5 grid-cols-1 sm:grid-cols-3">
-      <div className="rounded-xl bg-white/[0.02] p-3 border border-white/5 sm:bg-transparent sm:p-0 sm:border-0">
+    <div className="terminal-panel grid gap-4 p-4 sm:p-5 grid-cols-1 sm:grid-cols-3">
+      <div className="rounded-lg bg-[#090D17] border border-white/[0.06] p-3.5 sm:bg-transparent sm:p-0 sm:border-0">
         <div className="card-label"><Tooltip label="Grey Market Premium. An unofficial indicator of potential listing sentiment.">CURRENT GMP</Tooltip></div>
         {g == null ? (
-          <div className="mt-1 text-sm text-slate-400">GMP unavailable<div className="text-xs">Unable to fetch latest GMP data.</div></div>
+          <div className="mt-1 text-sm text-slate-400">GMP unavailable<div className="text-[11px] text-slate-500">Unable to fetch latest GMP data.</div></div>
         ) : (
-          <div className={`num mt-1 text-2xl sm:text-3xl font-black ${g >= 0 ? 'text-emerald-300' : 'text-red-300'}`}>{money(g)}</div>
+          <div className={`num mt-1 text-2xl sm:text-3xl font-black ${g >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{money(g)}</div>
         )}
-        <div className={`num text-sm ${g != null && g >= 0 ? 'text-emerald-300/80' : 'text-red-300/80'}`}>{pct(ipo.gmpPct)}</div>
-        <div className="mt-2 text-xs text-slate-500">Source: {ipo.gmpSource ?? '—'} · Last updated: {fmtTime(ipo.lastGmpAt)} ({timeAgo(ipo.lastGmpAt)})</div>
+        <div className={`num text-sm mt-0.5 ${g != null && g >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{pct(ipo.gmpPct)}</div>
+        <div className="mt-2 text-[11px] text-slate-500">Source: {ipo.gmpSource ?? 'Brokers'} • Pulse: {fmtTime(ipo.lastGmpAt)} ({timeAgo(ipo.lastGmpAt)})</div>
       </div>
-      <div className="rounded-xl bg-white/[0.02] p-3 border border-white/5 sm:bg-transparent sm:p-0 sm:border-0">
+      <div className="rounded-lg bg-[#090D17] border border-white/[0.06] p-3.5 sm:bg-transparent sm:p-0 sm:border-0">
         <div className="card-label"><Tooltip label="Issue Price + Current GMP. This is an estimate and is not guaranteed.">ESTIMATED LISTING PRICE</Tooltip></div>
-        <div className="num mt-1 text-2xl sm:text-3xl font-black">{ipo.estListing != null ? inr(ipo.estListing) : '₹---'}</div>
-        <div className="mt-2 text-xs text-slate-500">Issue price {inr(ipo.issuePrice)}</div>
+        <div className="num mt-1 text-2xl sm:text-3xl font-black text-slate-100">{ipo.estListing != null ? inr(ipo.estListing) : '—'}</div>
+        <div className="mt-2 text-[11px] text-slate-500">Issue price {inr(ipo.issuePrice)} • {ipo.lotSize} sh/lot</div>
       </div>
-      <div className="rounded-xl bg-white/[0.02] p-3 border border-white/5 sm:bg-transparent sm:p-0 sm:border-0">
-        <div className="card-label"><Tooltip label="Estimated gross profit based on the current GMP and your expected allotted quantity.">ESTIMATED PROFIT</Tooltip></div>
-        <div className={`num mt-1 text-2xl sm:text-3xl font-black ${(ipo.estProfit ?? 0) >= 0 ? 'text-emerald-300' : 'text-red-300'}`}>
-          {ipo.estProfit != null ? money(ipo.estProfit) : '₹---'}
+      <div className="rounded-lg bg-[#090D17] border border-white/[0.06] p-3.5 sm:bg-transparent sm:p-0 sm:border-0">
+        <div className="card-label"><Tooltip label="Estimated gross profit based on the current GMP and your expected allotted quantity.">POTENTIAL LISTING GAIN</Tooltip></div>
+        <div className={`num mt-1 text-2xl sm:text-3xl font-black ${(ipo.estProfit ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+          {ipo.estProfit != null ? money(ipo.estProfit) : '—'}
         </div>
-        <div className="mt-2 text-xs text-slate-500">Potential listing gain {pct(ipo.gmpPct)} · estimate, not guaranteed</div>
+        <div className="mt-2 text-[11px] text-slate-500">Potential listing gain {pct(ipo.gmpPct)} • estimate, not guaranteed</div>
       </div>
     </div>
   );

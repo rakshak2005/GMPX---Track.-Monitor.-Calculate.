@@ -24,4 +24,10 @@ export const env = {
   CLIENT_URL: process.env.CLIENT_URL ?? 'http://localhost:5173',
   SEED_DEMO: (process.env.SEED_DEMO ?? 'false').toLowerCase() === 'true',
   isMock: ((process.env.GMP_PROVIDER ?? 'live').toLowerCase() === 'mock'),
+  // Gmail SMTP Notifications (100% Free via App Password)
+  GMAIL_USER: process.env.GMAIL_USER ?? '',
+  GMAIL_APP_PASSWORD: process.env.GMAIL_APP_PASSWORD ?? '',
+  GMAIL_NOTIFY_TO: process.env.GMAIL_NOTIFY_TO ?? '',
 };
+
+

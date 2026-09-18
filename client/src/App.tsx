@@ -8,6 +8,7 @@ import { GmpTracker, ProfitTracker, SubscriptionPage } from './pages/Sections.js
 import { CalendarPage } from './pages/CalendarPage.js';
 import { IpoDetail } from './pages/IpoDetail.js';
 import { SettingsPage } from './pages/SettingsPage.js';
+import { AllotmentDeskPage } from './pages/AllotmentDeskPage.js';
 import { AddIpoModal } from './components/IpoModals.js';
 import { useIpoMutations, useRealtimeSync } from './hooks/useIpos.js';
 import { pushToast } from './hooks/useAlerts.js';
@@ -34,6 +35,7 @@ function Shell() {
           <Route path="gmp" element={<GmpTracker />} />
           <Route path="subscription" element={<SubscriptionPage />} />
           <Route path="profit" element={<ProfitTracker />} />
+          <Route path="allotment" element={<AllotmentDeskPage />} />
           <Route path="calendar" element={<CalendarPage />} />
           <Route path="ipo/:id" element={<IpoDetail />} />
           <Route path="settings" element={<SettingsPage />} />
