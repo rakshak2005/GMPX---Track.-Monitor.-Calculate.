@@ -258,16 +258,16 @@ export function Dashboard({ onAdd }: { onAdd: () => void }) {
 
       {/* Today Alert */}
       {s && (s.today.closingToday > 0 || s.today.awaitingAllotment > 0) && (
-        <div className="glass flex flex-wrap gap-x-6 gap-y-1 p-4 text-sm">
+        <div className="glass flex flex-wrap gap-x-4 gap-y-1 p-3.5 sm:p-4 text-xs sm:text-sm">
           <span className="card-label">TODAY</span>
           <span className="text-slate-300">{s.today.tracked} Applied IPO{s.today.tracked === 1 ? '' : 's'}</span>
-          {s.today.closingToday > 0 && <span className="text-amber-300">{s.today.closingToday} closing today</span>}
-          {s.today.awaitingAllotment > 0 && <span className="text-sky-300">{s.today.awaitingAllotment} awaiting allotment</span>}
+          {s.today.closingToday > 0 && <span className="text-amber-300 font-semibold">{s.today.closingToday} closing today</span>}
+          {s.today.awaitingAllotment > 0 && <span className="text-sky-300 font-semibold">{s.today.awaitingAllotment} awaiting allotment</span>}
         </div>
       )}
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
         {loading || !s ? (
           <><SkeletonCard /><SkeletonCard /><SkeletonCard /><SkeletonCard /></>
         ) : (

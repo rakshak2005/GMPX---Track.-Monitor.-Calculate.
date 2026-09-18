@@ -46,9 +46,9 @@ export function AppLayout({ onAdd }: { onAdd: () => void }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen w-full max-w-full overflow-x-clip">
       {/* Mobile top header bar */}
-      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-white/10 bg-[#070b18]/90 px-4 py-3 backdrop-blur md:hidden">
+      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-white/10 bg-[#070b18]/90 px-3.5 py-2.5 sm:px-4 sm:py-3 backdrop-blur md:hidden w-full">
         <Link to="/" className="flex items-center gap-2">
           <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-violet-600 font-black text-sm text-white shadow-lg shadow-blue-500/20">
             G
@@ -140,11 +140,11 @@ export function AppLayout({ onAdd }: { onAdd: () => void }) {
       </aside>
 
       {/* Main Content Area */}
-      <div className="md:pl-60">
-        <main className="mx-auto max-w-6xl p-3 pb-28 sm:p-5 md:p-8 md:pb-12">
+      <div className="md:pl-60 w-full max-w-full">
+        <main className="mx-auto max-w-6xl w-full px-3.5 py-3 pb-28 sm:p-5 md:p-8 md:pb-12">
           <Outlet />
         </main>
-        <footer className="mx-auto max-w-6xl px-4 pb-28 text-[11px] leading-relaxed text-slate-500 sm:px-5 md:px-8 md:pb-8">
+        <footer className="mx-auto max-w-6xl w-full px-3.5 pb-28 text-[11px] leading-relaxed text-slate-500 sm:px-5 md:px-8 md:pb-8">
           GMP and estimated listing prices are unofficial indicators and are not guaranteed. Actual listing prices may
           differ significantly. This dashboard is for personal tracking and informational purposes only.
         </footer>
