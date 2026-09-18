@@ -65,17 +65,20 @@ export function AddIpoModal({ open, onClose, onSave, saving }: { open: boolean; 
   const [form, setForm] = useState<IpoForm>(toForm());
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/70 p-4 sm:items-center" onClick={onClose}>
-      <div className="glass w-full max-w-2xl !bg-[#0b1020] p-6" onClick={(e) => e.stopPropagation()}>
-        <h2 className="text-lg font-bold">+ Add IPO</h2>
+    <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/75 p-0 sm:p-4 sm:items-center backdrop-blur-sm" onClick={onClose}>
+      <div className="glass w-full max-w-2xl !bg-[#0b1020] p-5 sm:p-6 rounded-t-2xl sm:rounded-2xl border-b-0 sm:border-b max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold text-white">+ Add IPO</h2>
+          <button onClick={onClose} className="sm:hidden text-slate-400 hover:text-white p-1">✕</button>
+        </div>
         <p className="mt-1 text-xs text-slate-400">Quantity and investment are calculated automatically.</p>
         <div className="mt-4"><Fields form={form} set={setForm} /></div>
         <div className="mt-5 flex justify-end gap-2">
-          <button onClick={onClose} className="rounded-lg border border-white/10 px-4 py-2 text-sm text-slate-300">Cancel</button>
+          <button onClick={onClose} className="rounded-lg border border-white/10 px-4 py-2 text-sm text-slate-300 hover:bg-white/5">Cancel</button>
           <button
             disabled={saving}
             onClick={() => onSave(formToPayload(form))}
-            className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 transition disabled:opacity-50"
           >
             {saving ? 'Saving…' : 'Save IPO'}
           </button>
@@ -91,16 +94,19 @@ export function EditIpoModal({ ipo, onClose, onSave, saving }: { ipo: Ipo | null
   if (!ipo) return null;
   if (key !== ipo.id) { setForm(toForm(ipo)); }
   return (
-    <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/70 p-4 sm:items-center" onClick={onClose}>
-      <div className="glass w-full max-w-2xl !bg-[#0b1020] p-6" onClick={(e) => e.stopPropagation()}>
-        <h2 className="text-lg font-bold">Edit {ipo.name}</h2>
+    <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/75 p-0 sm:p-4 sm:items-center backdrop-blur-sm" onClick={onClose}>
+      <div className="glass w-full max-w-2xl !bg-[#0b1020] p-5 sm:p-6 rounded-t-2xl sm:rounded-2xl border-b-0 sm:border-b max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold text-white">Edit {ipo.name}</h2>
+          <button onClick={onClose} className="sm:hidden text-slate-400 hover:text-white p-1">✕</button>
+        </div>
         <div className="mt-4"><Fields form={form} set={setForm} /></div>
         <div className="mt-5 flex justify-end gap-2">
-          <button onClick={onClose} className="rounded-lg border border-white/10 px-4 py-2 text-sm text-slate-300">Cancel</button>
+          <button onClick={onClose} className="rounded-lg border border-white/10 px-4 py-2 text-sm text-slate-300 hover:bg-white/5">Cancel</button>
           <button
             disabled={saving}
             onClick={() => onSave(formToPayload(form))}
-            className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 transition disabled:opacity-50"
           >
             {saving ? 'Saving…' : 'Save changes'}
           </button>

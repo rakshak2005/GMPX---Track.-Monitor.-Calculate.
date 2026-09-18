@@ -37,9 +37,9 @@ export function AuthModal({ open, onClose }: { open: boolean; onClose: () => voi
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm" onClick={onClose}>
-      <div className="glass w-full max-w-sm !bg-[#0b1020] p-6 shadow-2xl relative" onClick={(e) => e.stopPropagation()}>
-        <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-white">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 p-0 sm:p-4 sm:items-center backdrop-blur-sm" onClick={onClose}>
+      <div className="glass w-full max-w-sm !bg-[#0b1020] p-6 shadow-2xl relative rounded-t-2xl sm:rounded-2xl border-b-0 sm:border-b max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
           <X size={18} />
         </button>
 

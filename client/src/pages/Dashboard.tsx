@@ -5,7 +5,7 @@ import { useIpos, useSummary, useIpoMutations } from '../hooks/useIpos.js';
 import { useGmpAlerts, pushToast } from '../hooks/useAlerts.js';
 import { LiveIndicator } from '../components/LiveIndicator.js';
 import { SummaryCard, SkeletonCard } from '../components/SummaryCard.js';
-import { IpoTable, MobileIpoCard } from '../components/IpoTable.js';
+import { IpoTable, MobileIpoCard, MobileAvailableIpoCard } from '../components/IpoTable.js';
 import { inr, money, pct, timeAgo } from '../utils/format.js';
 import { determineMarketStatus } from '../utils/calculations.js';
 import type { Ipo } from '../types/ipo.js';
@@ -45,8 +45,8 @@ function ApplyQuickModal({
   const totalEstProfit = (ipo.currentGmp ?? 0) * totalQty;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm" onClick={onClose}>
-      <div className="glass w-full max-w-md !bg-[#0b1020] p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 p-0 sm:p-4 sm:items-center backdrop-blur-sm" onClick={onClose}>
+      <div className="glass w-full sm:max-w-md !bg-[#0b1020] p-6 shadow-2xl rounded-t-2xl sm:rounded-2xl border-b-0 sm:border-b max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-bold text-white">Apply for {ipo.name}</h3>
           <span className="rounded-full bg-blue-500/20 px-2.5 py-0.5 text-xs font-semibold text-blue-300">
@@ -61,6 +61,7 @@ function ApplyQuickModal({
               <label className="block text-xs font-medium text-slate-400">Issue Price (₹)</label>
               <input
                 type="number"
+                inputMode="decimal"
                 value={price}
                 onChange={(e) => setPrice(Number(e.target.value))}
                 className="mt-1 w-full"
@@ -70,6 +71,7 @@ function ApplyQuickModal({
               <label className="block text-xs font-medium text-slate-400">Number of Lots</label>
               <input
                 type="number"
+                inputMode="numeric"
                 min="1"
                 value={lots}
                 onChange={(e) => setLots(Math.max(1, Number(e.target.value)))}
@@ -323,14 +325,14 @@ export function Dashboard({ onAdd }: { onAdd: () => void }) {
             <p className="text-xs text-slate-400">All open and upcoming Mainboard issues. Click &quot;+ Mark Applied&quot; to track in your portfolio.</p>
           </div>
 
-          <div className="flex flex-wrap gap-2 text-xs">
-            <div className="inline-flex rounded-lg bg-white/5 p-0.5">
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <div className="inline-flex rounded-lg bg-white/5 p-0.5 overflow-x-auto max-w-full">
               {(['All', 'Open', 'Upcoming', 'Closed'] as const).map((m) => (
                 <button
                   key={m}
                   onClick={() => setFilterMarket(m)}
-                  className={`rounded-md px-2.5 py-1 font-medium transition ${
-                    filterMarket === m ? 'bg-blue-500 text-white' : 'text-slate-400 hover:text-white'
+                  className={`rounded-md px-2.5 py-1 font-medium whitespace-nowrap transition ${
+                    filterMarket === m ? 'bg-blue-500 text-white shadow' : 'text-slate-400 hover:text-white'
                   }`}
                 >
                   {m}
@@ -343,7 +345,8 @@ export function Dashboard({ onAdd }: { onAdd: () => void }) {
           </div>
         </div>
 
-        <div className="glass overflow-x-auto">
+        {/* Desktop Table View */}
+        <div className="glass hidden md:block overflow-x-auto">
           <table className="w-full min-w-[840px] text-left text-sm">
             <thead>
               <tr className="card-label border-b border-white/5 bg-white/[0.02]">
@@ -481,6 +484,24 @@ export function Dashboard({ onAdd }: { onAdd: () => void }) {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Responsive Cards View */}
+        <div className="grid gap-3 md:hidden">
+          {availableRows.length === 0 ? (
+            <div className="glass p-6 text-center text-sm text-slate-400">
+              No IPOs match the selected filter. Try switching between Open / Upcoming.
+            </div>
+          ) : (
+            availableRows.map((ipo) => (
+              <MobileAvailableIpoCard
+                key={ipo.id}
+                ipo={ipo}
+                onApply={(selected) => setSelectedIpoToApply(selected)}
+                onUnapply={handleUnapply}
+              />
+            ))
+          )}
         </div>
       </div>
 

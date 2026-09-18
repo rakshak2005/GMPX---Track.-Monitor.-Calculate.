@@ -40,14 +40,20 @@ export function MyIpos() {
           onChange={(e) => { setSearch(e.target.value); clearTimeout((setSearch as unknown as { t?: number }).t); (setSearch as unknown as { t?: number }).t = window.setTimeout(() => setDebounced(e.target.value), 300); }}
           className="md:max-w-xs"
         />
-        <div className="flex flex-wrap gap-1">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full no-scrollbar">
           {STATUSES.map((s) => (
-            <button key={s} onClick={() => setStatus(s)} className={`rounded-full px-3 py-1.5 text-xs font-semibold ${status === s ? 'bg-blue-500/30 text-blue-200' : 'bg-white/5 text-slate-400'}`}>
+            <button
+              key={s}
+              onClick={() => setStatus(s)}
+              className={`rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition ${
+                status === s ? 'bg-blue-500 text-white shadow-md' : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white'
+              }`}
+            >
               {s}
             </button>
           ))}
         </div>
-        <select value={sort} onChange={(e) => setSort(e.target.value)} className="md:ml-auto md:max-w-44">
+        <select value={sort} onChange={(e) => setSort(e.target.value)} className="w-full md:ml-auto md:max-w-44">
           {SORTS.map((s) => <option key={s.v} value={s.v}>Sort: {s.l}</option>)}
         </select>
       </div>
