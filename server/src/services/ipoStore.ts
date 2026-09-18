@@ -1,7 +1,7 @@
 // Storage abstraction backed by Neon PostgreSQL with automatic past-listing cleanup.
 import crypto from 'node:crypto';
 import { query, isNeonConnected } from '../config/db.js';
-import { determineMarketStatus } from '../utils/calculations.js';
+import { determineMarketStatus, isClosedExpired, parseBiddingDates } from '../utils/calculations.js';
 
 export interface IpoLean {
   id: string;
@@ -49,29 +49,51 @@ const mem = {
 };
 
 /**
- * Automatically delete IPOs whose listing date has passed.
+ * Automatically delete IPOs:
+ * 1. Whose bidding close date + 4 days has passed (from close_date or parsed notes)
+ * 2. Or whose listing date has passed.
  */
 export async function cleanupExpiredIpos(): Promise<number> {
   let deletedCount = 0;
   if (isNeonConnected()) {
-    // Delete IPOs where listing_date is strictly before today (00:00:00 UTC)
+    // 1. Direct SQL deletion where close_date or listing_date is known in Postgres
     const res = await query(
       `DELETE FROM ipos 
-       WHERE listing_date IS NOT NULL 
-         AND listing_date < CURRENT_DATE - INTERVAL '1 day'`
+       WHERE (close_date IS NOT NULL AND close_date < CURRENT_DATE - INTERVAL '4 days')
+          OR (listing_date IS NOT NULL AND listing_date < CURRENT_DATE - INTERVAL '1 day')`
     );
     deletedCount = res.rowCount || 0;
+
+    // 2. Also check rows where close_date is NULL in DB but notes contains Bidding dates that have passed 4 days
+    const remaining = await query(
+      `SELECT id, name, close_date, notes FROM ipos WHERE close_date IS NULL AND notes IS NOT NULL`
+    );
+    const expiredIds: string[] = [];
+    for (const row of remaining.rows) {
+      if (isClosedExpired(null, row.notes, 4)) {
+        expiredIds.push(row.id);
+      }
+    }
+    if (expiredIds.length > 0) {
+      const delNotesRes = await query(
+        `DELETE FROM ipos WHERE id = ANY($1::uuid[])`,
+        [expiredIds]
+      );
+      deletedCount += delNotesRes.rowCount || 0;
+    }
   } else {
     const today = new Date().toISOString().slice(0, 10);
     for (const [id, ipo] of mem.ipos.entries()) {
-      if (ipo.listingDate && ipo.listingDate.slice(0, 10) < today) {
+      const expiredByClose = isClosedExpired(ipo.closeDate, ipo.notes, 4);
+      const expiredByListing = Boolean(ipo.listingDate && ipo.listingDate.slice(0, 10) < today);
+      if (expiredByClose || expiredByListing) {
         mem.ipos.delete(id);
         deletedCount++;
       }
     }
   }
   if (deletedCount > 0) {
-    console.log(`[cleanup] Deleted ${deletedCount} IPOs whose listing date has passed.`);
+    console.log(`[cleanup] Automatically deleted ${deletedCount} IPOs (closed date + 4 days passed or listing date passed).`);
   }
   return deletedCount;
 }

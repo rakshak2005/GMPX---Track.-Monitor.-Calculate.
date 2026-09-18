@@ -1,5 +1,5 @@
 import { listIpos, createIpo, updateIpo, findIpoByName, appendGmpHistory } from './ipoStore.js';
-import { determineMarketStatus } from '../utils/calculations.js';
+import { determineMarketStatus, parseBiddingDates } from '../utils/calculations.js';
 
 export interface ScrapedIpo {
   name: string;
@@ -250,6 +250,10 @@ export async function syncLiveIpos(): Promise<{ totalScraped: number; created: n
     const targetLotSize = detailLot || 15;
 
     try {
+      const parsedDates = parseBiddingDates(item.dates);
+      const parsedCloseDate = parsedDates.closeDate ? parsedDates.closeDate.toISOString() : undefined;
+      const parsedOpenDate = parsedDates.openDate ? parsedDates.openDate.toISOString() : undefined;
+
       const existing = await findIpoByName(item.name);
       if (existing) {
         let trend: 'up' | 'down' | 'neutral' = 'neutral';
@@ -272,6 +276,9 @@ export async function syncLiveIpos(): Promise<{ totalScraped: number; created: n
           notes: item.dates ? `Bidding: ${item.dates}` : existing.notes,
           lotSize: targetLotSize,
         };
+        if (parsedCloseDate) patch.closeDate = parsedCloseDate;
+        if (parsedOpenDate) patch.openDate = parsedOpenDate;
+
         if (prevGmpValue !== null && item.gmp !== prevGmpValue) {
           patch.prevGmp = prevGmpValue;
           patch.gmpTrend = trend;
@@ -305,6 +312,8 @@ export async function syncLiveIpos(): Promise<{ totalScraped: number; created: n
           category: 'Mainboard',
           marketStatus: item.marketStatus,
           notes: item.dates ? `Bidding: ${item.dates}` : '',
+          openDate: parsedOpenDate,
+          closeDate: parsedCloseDate,
           listingDate: detailListingDate || undefined,
           allotmentDate: detailAllotmentDate || undefined,
         });
@@ -315,6 +324,8 @@ export async function syncLiveIpos(): Promise<{ totalScraped: number; created: n
           gmpSource: 'IPOGuru Live',
           gmpStale: false,
           lotSize: targetLotSize,
+          openDate: parsedOpenDate,
+          closeDate: parsedCloseDate,
           listingDate: detailListingDate || undefined,
           allotmentDate: detailAllotmentDate || undefined,
           subscription: detailSubscription || undefined,

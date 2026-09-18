@@ -83,19 +83,12 @@ const MONTH_MAP: Record<string, number> = {
   jul: 6, aug: 7, sep: 8, sept: 8, oct: 9, nov: 10, dec: 11,
 };
 
-export function determineMarketStatus(
+export function parseBiddingDates(
   dates?: string | null,
   notes?: string | null,
-  currentStatus?: string | null,
-): 'Open' | 'Closed' | 'Upcoming' {
+): { openDate: Date | null; closeDate: Date | null } {
   const text = (dates || notes || '').replace(/^Bidding:\s*/i, '').trim();
-  if (!text) {
-    if (currentStatus === 'Open' || currentStatus === 'Closed' || currentStatus === 'Upcoming') {
-      return currentStatus;
-    }
-    return 'Upcoming';
-  }
-
+  if (!text) return { openDate: null, closeDate: null };
   const now = new Date();
   const year = now.getFullYear();
 
@@ -105,11 +98,10 @@ export function determineMarketStatus(
     const startM = MONTH_MAP[m1[2].toLowerCase().slice(0, 3)];
     const endM = MONTH_MAP[m1[4].toLowerCase().slice(0, 3)];
     if (startM !== undefined && endM !== undefined) {
-      const start = new Date(year, startM, parseInt(m1[1], 10), 0, 0, 0);
-      const end = new Date(year, endM, parseInt(m1[3], 10), 23, 59, 59, 999);
-      if (now > end) return 'Closed';
-      if (now >= start && now <= end) return 'Open';
-      if (now < start) return 'Upcoming';
+      return {
+        openDate: new Date(year, startM, parseInt(m1[1], 10), 0, 0, 0),
+        closeDate: new Date(year, endM, parseInt(m1[3], 10), 23, 59, 59, 999),
+      };
     }
   }
 
@@ -118,12 +110,43 @@ export function determineMarketStatus(
   if (m2 && m2[1] && m2[2] && m2[3]) {
     const m = MONTH_MAP[m2[3].toLowerCase().slice(0, 3)];
     if (m !== undefined) {
-      const start = new Date(year, m, parseInt(m2[1], 10), 0, 0, 0);
-      const end = new Date(year, m, parseInt(m2[2], 10), 23, 59, 59, 999);
-      if (now > end) return 'Closed';
-      if (now >= start && now <= end) return 'Open';
-      if (now < start) return 'Upcoming';
+      return {
+        openDate: new Date(year, m, parseInt(m2[1], 10), 0, 0, 0),
+        closeDate: new Date(year, m, parseInt(m2[2], 10), 23, 59, 59, 999),
+      };
     }
+  }
+
+  return { openDate: null, closeDate: null };
+}
+
+export function isClosedExpired(
+  closeDate?: string | Date | null,
+  notes?: string | null,
+  days: number = 4,
+): boolean {
+  let cDate = closeDate ? new Date(closeDate) : null;
+  if (!cDate || isNaN(cDate.getTime())) {
+    cDate = parseBiddingDates(null, notes).closeDate;
+  }
+  if (!cDate || isNaN(cDate.getTime())) return false;
+
+  const now = new Date();
+  const expiryTime = cDate.getTime() + days * 24 * 60 * 60 * 1000;
+  return now.getTime() > expiryTime;
+}
+
+export function determineMarketStatus(
+  dates?: string | null,
+  notes?: string | null,
+  currentStatus?: string | null,
+): 'Open' | 'Closed' | 'Upcoming' {
+  const parsed = parseBiddingDates(dates, notes);
+  if (parsed.openDate && parsed.closeDate) {
+    const now = new Date();
+    if (now > parsed.closeDate) return 'Closed';
+    if (now >= parsed.openDate && now <= parsed.closeDate) return 'Open';
+    if (now < parsed.openDate) return 'Upcoming';
   }
 
   if (currentStatus === 'Open' || currentStatus === 'Closed' || currentStatus === 'Upcoming') {
@@ -131,4 +154,5 @@ export function determineMarketStatus(
   }
   return 'Upcoming';
 }
+
 

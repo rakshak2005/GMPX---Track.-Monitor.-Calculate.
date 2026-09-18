@@ -9,7 +9,7 @@ import { Sparkline } from '../components/Sparkline.js';
 import { SummaryCard, SkeletonCard } from '../components/SummaryCard.js';
 import { IpoTable, MobileIpoCard, MobileAvailableIpoCard } from '../components/IpoTable.js';
 import { inr, money, pct, timeAgo } from '../utils/format.js';
-import { determineMarketStatus } from '../utils/calculations.js';
+import { determineMarketStatus, isClosedExpired } from '../utils/calculations.js';
 import type { Ipo } from '../types/ipo.js';
 
 export function EmptyState() {
@@ -181,6 +181,10 @@ export function Dashboard({ onAdd }: { onAdd?: () => void }) {
 
   const availableRows = useMemo(() => {
     return rows.filter((r) => {
+      // Automatically hide and purge any IPO where closed date + 4 days has elapsed
+      if (isClosedExpired(r.closeDate, r.notes, 4)) {
+        return false;
+      }
       const actualMarketStatus = determineMarketStatus(null, r.notes, r.marketStatus);
       const matchStatus = filterMarket === 'All' || actualMarketStatus === filterMarket;
       const matchCat = filterCategory === 'All' || (r.category || 'Mainboard') === filterCategory;

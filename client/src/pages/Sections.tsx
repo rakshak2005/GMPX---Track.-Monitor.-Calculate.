@@ -3,6 +3,7 @@ import { TrendingUp, TrendingDown, Minus, ArrowUpRight, ArrowDownRight, Sparkles
 
 import { useIpos, useSummary } from '../hooks/useIpos.js';
 import { inr, money, pct, timeAgo } from '../utils/format.js';
+import { isClosedExpired } from '../utils/calculations.js';
 import { Sparkline } from '../components/Sparkline.js';
 
 export function GmpTracker() {
@@ -27,7 +28,9 @@ export function GmpTracker() {
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {data.map((i) => {
+          {data
+            .filter((i) => !isClosedExpired(i.closeDate, i.notes, 4))
+            .map((i) => {
             const g = i.currentGmp;
             const pos = (g ?? 0) >= 0;
             const trend =
@@ -129,6 +132,7 @@ export function SubscriptionPage() {
       ) : (
         <div className="grid gap-3 lg:grid-cols-2">
           {data
+            .filter((i) => !isClosedExpired(i.closeDate, i.notes, 4))
             .slice()
             .sort((a, b) => {
               const aTot = a.subscription?.total ?? -1;
