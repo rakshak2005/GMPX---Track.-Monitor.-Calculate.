@@ -48,12 +48,21 @@ const mem = {
   sub: new Map<string, SubPoint[]>(),
 };
 
+let lastCleanupTime = 0;
+
 /**
  * Automatically delete IPOs:
  * 1. Whose bidding close date + 4 days has passed (from close_date or parsed notes)
  * 2. Or whose listing date has passed.
  */
-export async function cleanupExpiredIpos(): Promise<number> {
+export async function cleanupExpiredIpos(force = false): Promise<number> {
+  const now = Date.now();
+  // Throttle database cleanup to once every 30 minutes unless forced
+  if (!force && now - lastCleanupTime < 30 * 60 * 1000) {
+    return 0;
+  }
+  lastCleanupTime = now;
+
   let deletedCount = 0;
   if (isNeonConnected()) {
     // 1. Direct SQL deletion where close_date or listing_date is known in Postgres
@@ -93,13 +102,38 @@ export async function cleanupExpiredIpos(): Promise<number> {
     }
   }
   if (deletedCount > 0) {
+    invalidateIpoCache();
     console.log(`[cleanup] Automatically deleted ${deletedCount} IPOs (closed date + 4 days passed or listing date passed).`);
   }
   return deletedCount;
 }
 
+// In-memory cache for public / user-specific IPO list to minimize Neon roundtrips
+interface IpoCacheEntry {
+  timestamp: number;
+  data: IpoLean[];
+}
+const ipoListCache = new Map<string, IpoCacheEntry>();
+const CACHE_TTL_MS = 15_000; // 15 seconds
+
+export function invalidateIpoCache(userId?: string): void {
+  if (userId) {
+    ipoListCache.delete(userId);
+  } else {
+    ipoListCache.clear();
+  }
+}
+
 export async function listIpos(userId?: string): Promise<IpoLean[]> {
-  await cleanupExpiredIpos();
+  const cacheKey = userId || 'public';
+  const cached = ipoListCache.get(cacheKey);
+  const now = Date.now();
+  if (cached && now - cached.timestamp < CACHE_TTL_MS) {
+    return cached.data;
+  }
+
+  // Trigger throttled cleanup in background (non-blocking)
+  cleanupExpiredIpos().catch(() => {});
 
   if (isNeonConnected()) {
     let sql = `
@@ -124,7 +158,7 @@ export async function listIpos(userId?: string): Promise<IpoLean[]> {
       ORDER BY i.created_at DESC
     `;
     const res = await query(sql, [userId || '00000000-0000-0000-0000-000000000000']);
-    return res.rows.map((r) => {
+    const result = res.rows.map((r) => {
       const resolvedMarketStatus = determineMarketStatus(null, r.notes, r.marketStatus || 'Upcoming');
       return {
         id: r.id,
@@ -158,6 +192,8 @@ export async function listIpos(userId?: string): Promise<IpoLean[]> {
       };
     });
 
+    ipoListCache.set(cacheKey, { timestamp: now, data: result });
+    return result;
   }
 
   const list: IpoLean[] = [];
@@ -172,7 +208,9 @@ export async function listIpos(userId?: string): Promise<IpoLean[]> {
       isApplied: Boolean(userBid),
     });
   }
-  return list.sort((a, b) => String(b.createdAt ?? '').localeCompare(String(a.createdAt ?? '')));
+  const sorted = list.sort((a, b) => String(b.createdAt ?? '').localeCompare(String(a.createdAt ?? '')));
+  ipoListCache.set(cacheKey, { timestamp: now, data: sorted });
+  return sorted;
 }
 
 export async function getIpo(id: string, userId?: string): Promise<IpoLean | null> {
@@ -258,6 +296,7 @@ export async function createIpo(data: Record<string, unknown>): Promise<IpoLean>
        RETURNING id, name, company_name as "companyName", issue_price as "issuePrice", lot_size as "lotSize"`,
       [name, companyName, symbol, logoUrl, issuePrice, lotSize, openDate, closeDate, allotmentDate, listingDate, marketStatus, category, notes]
     );
+    invalidateIpoCache();
     const r = res.rows[0];
     return {
       id: r.id,
@@ -373,6 +412,7 @@ export async function updateIpo(id: string, data: Record<string, unknown>): Prom
       values.push(id);
       const sql = `UPDATE ipos SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *`;
       const res = await query(sql, values);
+      invalidateIpoCache();
       if (res.rows.length === 0) return null;
       return getIpo(id);
     }
@@ -387,6 +427,7 @@ export async function updateIpo(id: string, data: Record<string, unknown>): Prom
     updatedAt: new Date().toISOString(),
   };
   mem.ipos.set(id, updated);
+  invalidateIpoCache();
   return updated;
 }
 
@@ -397,6 +438,8 @@ export async function setUserIpoApplication(
   lotsApplied: number = 1,
   issuePrice: number = 0
 ): Promise<void> {
+  invalidateIpoCache(userId);
+  invalidateIpoCache('public');
   if (isNeonConnected()) {
     if (applied) {
       await query(
@@ -430,6 +473,7 @@ export async function updateIpoStatus(
   userId?: string | null,
   allottedLots: number = 0
 ): Promise<void> {
+  invalidateIpoCache();
   if (isNeonConnected()) {
     if (userId) {
       await query(
@@ -467,6 +511,7 @@ export async function updateIpoStatus(
 }
 
 export async function deleteIpo(id: string): Promise<boolean> {
+  invalidateIpoCache();
   if (isNeonConnected()) {
     const res = await query(`DELETE FROM ipos WHERE id = $1`, [id]);
     return (res.rowCount || 0) > 0;
