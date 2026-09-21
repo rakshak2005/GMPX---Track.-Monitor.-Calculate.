@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ShieldCheck, Clock, RefreshCw, CheckCircle2, XCircle, Search, AlertCircle, ExternalLink, Copy, Check, MessageSquare, Send, Mail } from 'lucide-react';
@@ -73,10 +73,21 @@ export function AllotmentDeskPage() {
   const [search, setSearch] = useState('');
 
   // Alerts State (Gmail)
-  const [gmailAddress, setGmailAddress] = useState(() => localStorage.getItem('gmpx_gmail_address') || '');
+  const [gmailAddress, setGmailAddress] = useState(() => user?.preferences?.alertEmail || localStorage.getItem('gmpx_gmail_address') || '');
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [alertStatus, setAlertStatus] = useState<string | null>(null);
   const [showAlertSetup, setShowAlertSetup] = useState(false);
+
+  // Synchronize state when authenticated user profile loads
+  useEffect(() => {
+    if (user?.preferences?.pan && !pan) {
+      setPan(user.preferences.pan);
+    }
+    if (user?.preferences?.alertEmail) {
+      setGmailAddress(user.preferences.alertEmail);
+      localStorage.setItem('gmpx_gmail_address', user.preferences.alertEmail);
+    }
+  }, [user]);
 
   // Periodically query active registrar dropdowns
   const { data: regIssues } = useQuery({
@@ -86,22 +97,32 @@ export function AllotmentDeskPage() {
     staleTime: 20000,
   });
 
+  const handleSaveEmail = async (emailToSave?: string) => {
+    const target = (emailToSave !== undefined ? emailToSave : gmailAddress).trim();
+    if (target) {
+      localStorage.setItem('gmpx_gmail_address', target);
+      if (user) {
+        await updatePreferences({ alertEmail: target });
+      }
+    }
+  };
 
   const handleTestEmail = async () => {
-    if (!gmailAddress.trim() || !gmailAddress.includes('@')) {
+    const targetEmail = gmailAddress.trim();
+    if (!targetEmail || !targetEmail.includes('@')) {
       setAlertStatus('❌ Please enter a valid Gmail address.');
       return;
     }
     setIsSendingEmail(true);
     setAlertStatus(null);
     try {
-      localStorage.setItem('gmpx_gmail_address', gmailAddress.trim());
+      localStorage.setItem('gmpx_gmail_address', targetEmail);
       if (user) {
-        await updatePreferences({ alertEmail: gmailAddress.trim() });
+        await updatePreferences({ alertEmail: targetEmail });
       }
-      const res = await api.testEmail(gmailAddress.trim());
+      const res = await api.testEmail(targetEmail);
       if (res.success) {
-        setAlertStatus('✅ Gmail Connected! Test alert email sent successfully to ' + gmailAddress.trim());
+        setAlertStatus('✅ Gmail Connected! Test alert email sent successfully to ' + targetEmail);
       } else {
         setAlertStatus(`⚠️ ${res.message}`);
       }
@@ -110,7 +131,6 @@ export function AllotmentDeskPage() {
     } finally {
       setIsSendingEmail(false);
     }
-
   };
 
 
@@ -289,7 +309,12 @@ export function AllotmentDeskPage() {
                     type="email"
                     placeholder="e.g. yourname@gmail.com"
                     value={gmailAddress}
-                    onChange={(e) => setGmailAddress(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setGmailAddress(val);
+                      localStorage.setItem('gmpx_gmail_address', val.trim());
+                    }}
+                    onBlur={() => handleSaveEmail(gmailAddress)}
                     className="w-full text-xs font-mono bg-[#0c1220] border border-amber-500/30 text-white px-2.5 py-1.5 rounded-md focus:border-amber-400 outline-none"
                   />
                 </div>
