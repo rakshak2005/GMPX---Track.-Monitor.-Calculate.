@@ -86,46 +86,113 @@ export function formatEmailAllotmentAlert(
 ): { subject: string; text: string; html: string } {
   const isAllotted = status === 'ALLOTTED';
   const subject = isAllotted
-    ? `🎉 ALLOTTED: ${ipoName} - IPO Allotment Declared!`
-    : `📢 Allotment Update: ${ipoName} - Not Allotted`;
+    ? `🎉 [ALLOTTED] ${ipoName} - Official Allotment Confirmed!`
+    : `📢 [UPDATE] ${ipoName} - Allotment Result Declared (Not Allotted)`;
 
   const text = isAllotted
-    ? `Congratulations!\n\nYou have been ALLOTTED shares for ${ipoName}.\n\nShares Allotted: ${shares || 'Standard Lot'}\nRegistrar: ${registrar || 'Official Registrar'}\nAction: Please check your demat account or bank lien status.\n\nView live GMP on GMPX Terminal.`
-    : `Allotment Update for ${ipoName}\n\nStatus: NOT ALLOTTED\nShares: 0\nBank/UPI mandate lien will be released within 24-48 hours.\nRegistrar: ${registrar || 'Official Registrar'}\n\nTrack upcoming IPOs on GMPX Terminal.`;
+    ? `Congratulations!\n\nYou have been ALLOTTED shares for ${ipoName}.\n\nStatus: ALLOTTED\nShares Allotted: ${shares || 'Standard Lot'}\nRegistrar: ${registrar || 'Official Registrar'}\nMandate/Demat: Shares will be credited to your demat account prior to listing day.\n\nTrack listing gain and live GMP on GMPX Terminal.`
+    : `Allotment Update for ${ipoName}\n\nStatus: NOT ALLOTTED\nShares: 0\nRegistrar: ${registrar || 'Official Registrar'}\nMandate/Lien: UPI mandate bank lien hold will be released automatically within 24-48 hours.\n\nTrack upcoming IPO opportunities on GMPX Terminal.`;
 
   const html = `
-    <div style="font-family: Arial, sans-serif; background-color: #0f172a; color: #f8fafc; padding: 24px; border-radius: 12px; max-width: 600px; margin: auto;">
-      <div style="text-align: center; margin-bottom: 20px;">
-        <h1 style="color: ${isAllotted ? '#10b981' : '#94a3b8'}; margin: 0; font-size: 24px;">
-          ${isAllotted ? '🎉 Allotment Confirmed!' : '📢 Allotment Notice'}
-        </h1>
-        <p style="color: #64748b; font-size: 14px; margin-top: 4px;">GMPX Automated Allotment Alert Engine</p>
-      </div>
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>${subject}</title>
+    </head>
+    <body style="margin: 0; padding: 0; background-color: #060913; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #060913; padding: 30px 15px;">
+        <tr>
+          <td align="center">
+            <!-- Main Card Container -->
+            <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 560px; background: linear-gradient(180deg, #0f172a 0%, #0b1120 100%); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; overflow: hidden; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);">
+              
+              <!-- Brand Header -->
+              <tr>
+                <td style="padding: 24px 28px 18px 28px; border-bottom: 1px solid rgba(255, 255, 255, 0.07);">
+                  <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                    <tr>
+                      <td>
+                        <span style="font-size: 18px; font-weight: 800; letter-spacing: 1px; color: #38bdf8;">GMPX</span>
+                        <span style="font-size: 12px; font-weight: 600; color: #94a3b8; margin-left: 6px; letter-spacing: 0.5px;">ALLOTMENT INTELLIGENCE</span>
+                      </td>
+                      <td align="right">
+                        <span style="font-size: 10px; font-weight: 700; color: #10b981; background-color: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); padding: 4px 8px; border-radius: 6px; letter-spacing: 0.5px;">
+                          7:00 PM AUTO-POLLER
+                        </span>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
 
-      <div style="background-color: #1e293b; border-radius: 8px; padding: 20px; border: 1px solid #334155;">
-        <h2 style="margin: 0 0 16px 0; color: #38bdf8; font-size: 18px;">${ipoName}</h2>
-        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-          <tr>
-            <td style="padding: 8px 0; color: #94a3b8;">Status:</td>
-            <td style="padding: 8px 0; font-weight: bold; color: ${isAllotted ? '#34d399' : '#f87171'};">
-              ${isAllotted ? 'ALLOTTED' : 'NOT ALLOTTED'}
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 8px 0; color: #94a3b8;">Shares:</td>
-            <td style="padding: 8px 0; font-weight: bold; color: #f8fafc;">${isAllotted ? (shares || 'Standard Lot') : '0'}</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px 0; color: #94a3b8;">Registrar:</td>
-            <td style="padding: 8px 0; color: #f8fafc;">${registrar || 'Official Registrar'}</td>
-          </tr>
-        </table>
-      </div>
+              <!-- Hero Status Banner -->
+              <tr>
+                <td style="padding: 28px 28px 20px 28px; text-align: center;">
+                  <div style="display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 14px; ${isAllotted ? 'background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3);' : 'background: rgba(244, 63, 94, 0.15); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.3);'}">
+                    ${isAllotted ? '🎉 ALLOTMENT SUCCESS' : '📢 ALLOTMENT NOTICE'}
+                  </div>
+                  <h1 style="margin: 0 0 8px 0; font-size: 22px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px;">
+                    ${ipoName}
+                  </h1>
+                  <p style="margin: 0; font-size: 13px; color: #94a3b8; line-height: 1.5;">
+                    ${isAllotted ? 'Your application has been chosen in the registrar lottery draw.' : 'Allotment lottery completed by the issue registrar.'}
+                  </p>
+                </td>
+              </tr>
 
-      <p style="margin-top: 20px; font-size: 12px; color: #64748b; text-align: center;">
-        ${isAllotted ? 'Your demat account will be credited before listing day.' : 'UPI mandate lien hold will be automatically unblocked by your bank.'}
-      </p>
-    </div>
+              <!-- Status Details Box -->
+              <tr>
+                <td style="padding: 0 28px 24px 28px;">
+                  <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #080d1a; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 18px 20px;">
+                    <tr>
+                      <td style="padding: 8px 0; color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Allotment Status</td>
+                      <td align="right" style="padding: 8px 0; font-size: 14px; font-weight: 800; color: ${isAllotted ? '#34d399' : '#fb7185'};">
+                        ${isAllotted ? 'ALLOTTED' : 'NOT ALLOTTED'}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 8px 0; border-top: 1px solid rgba(255, 255, 255, 0.05); color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Shares Allotted</td>
+                      <td align="right" style="padding: 8px 0; border-top: 1px solid rgba(255, 255, 255, 0.05); font-size: 14px; font-weight: 800; color: #ffffff;">
+                        ${isAllotted ? (shares || 'Standard Lot') + ' Shares' : '0 Shares'}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 8px 0; border-top: 1px solid rgba(255, 255, 255, 0.05); color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Registrar</td>
+                      <td align="right" style="padding: 8px 0; border-top: 1px solid rgba(255, 255, 255, 0.05); font-size: 13px; font-weight: 600; color: #38bdf8;">
+                        ${registrar || 'Official Registrar'}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 8px 0; border-top: 1px solid rgba(255, 255, 255, 0.05); color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Bank / Mandate Action</td>
+                      <td align="right" style="padding: 8px 0; border-top: 1px solid rgba(255, 255, 255, 0.05); font-size: 12px; font-weight: 600; color: #cbd5e1;">
+                        ${isAllotted ? 'Funds debited • Demat credit pre-listing' : 'Lien unblocked in 24-48 hrs'}
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+
+              <!-- Footer CTA -->
+              <tr>
+                <td style="padding: 0 28px 28px 28px; text-align: center;">
+                  <a href="https://gmpx-track-monitor-calculate.vercel.app/allotment" style="display: block; background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%); color: #ffffff; text-decoration: none; font-size: 13px; font-weight: 700; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);">
+                    Open Allotment Desk &amp; GMP Terminal &rarr;
+                  </a>
+                  <p style="margin: 18px 0 0 0; font-size: 11px; color: #475569; line-height: 1.5;">
+                    This automated alert was dispatched by your 7:00 PM IST Automated Poller Pipeline.<br>
+                    To modify your registered PAN or notification email, visit your GMPX Terminal Settings.
+                  </p>
+                </td>
+              </tr>
+
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
   `;
 
   return { subject, text, html };

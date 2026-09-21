@@ -8,12 +8,8 @@ function num(name: string, fallback: number): number {
 
 export const env = {
   PORT: num('PORT', 5001),
-  DATABASE_URL:
-    process.env.DATABASE_URL ||
-    'postgresql://neondb_owner:npg_WD7ak9iLdfxM@ep-dawn-term-b37suw1y.c-4.ap-southeast-1.aws.neon.tech/neondb?sslmode=require',
-  DATABASE_URL_POOLED:
-    process.env.DATABASE_URL_POOLED ||
-    'postgresql://neondb_owner:npg_WD7ak9iLdfxM@ep-dawn-term-b37suw1y-pooler.c-4.ap-southeast-1.aws.neon.tech/neondb?sslmode=require',
+  DATABASE_URL: process.env.DATABASE_URL || '',
+  DATABASE_URL_POOLED: process.env.DATABASE_URL_POOLED || process.env.DATABASE_URL || '',
   MONGODB_URI: process.env.MONGODB_URI ?? '',
   GMP_PROVIDER: (process.env.GMP_PROVIDER ?? 'live').toLowerCase(),
   GMP_API_URL: process.env.GMP_API_URL ?? '',
