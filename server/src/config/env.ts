@@ -19,7 +19,7 @@ export const env = {
   GMP_API_URL: process.env.GMP_API_URL ?? '',
   GMP_API_KEY: process.env.GMP_API_KEY ?? '',
   GMP_FALLBACK_URL: process.env.GMP_FALLBACK_URL ?? '',
-  GMP_REFRESH_INTERVAL: Math.max(60, num('GMP_REFRESH_INTERVAL', 300)),
+  GMP_REFRESH_INTERVAL: Math.max(60, num('GMP_REFRESH_INTERVAL', 600)),
   JWT_SECRET: process.env.JWT_SECRET || 'gmpulse_neon_super_secret_jwt_key_2026',
   CLIENT_URL: process.env.CLIENT_URL ?? 'http://localhost:5173',
   SEED_DEMO: (process.env.SEED_DEMO ?? 'false').toLowerCase() === 'true',

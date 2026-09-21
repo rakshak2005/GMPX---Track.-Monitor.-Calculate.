@@ -167,6 +167,14 @@ async function initSchema(): Promise<void> {
       source VARCHAR(100),
       created_at TIMESTAMPTZ DEFAULT NOW()
     );
+
+    -- Performance indexes for fast filtering and joins
+    CREATE INDEX IF NOT EXISTS idx_ipos_created_at ON ipos(created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_ipos_close_date ON ipos(close_date);
+    CREATE INDEX IF NOT EXISTS idx_ipos_listing_date ON ipos(listing_date);
+    CREATE INDEX IF NOT EXISTS idx_user_ipos_user_id ON user_ipos(user_id);
+    CREATE INDEX IF NOT EXISTS idx_user_ipos_ipo_id ON user_ipos(ipo_id);
+    CREATE INDEX IF NOT EXISTS idx_gmp_history_ipo_id ON gmp_history(ipo_id, created_at DESC);
   `;
   await query(schemaSql);
   console.log('[db] Neon database schema initialized.');

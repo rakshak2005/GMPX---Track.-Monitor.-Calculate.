@@ -17,6 +17,7 @@ export function startGmpScheduler(): void {
   }, 2000);
 
   timer = setInterval(() => {
+    console.log(`[scheduler] Running periodic 10-min live IPO sync...`);
     syncLiveIpos()
       .then((r) => {
         if (r.totalScraped > 0 || r.errors.length > 0)
@@ -24,5 +25,4 @@ export function startGmpScheduler(): void {
       })
       .catch((e) => console.error('[scheduler] sync failed:', (e as Error).message));
   }, ms);
-  timer.unref?.();
 }

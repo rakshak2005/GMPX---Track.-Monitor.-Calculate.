@@ -194,159 +194,169 @@ export async function fetchLiveMarketIpos(): Promise<ScrapedIpo[]> {
       lastUpdated: new Date().toISOString(),
     });
   }
-
   return result;
 }
 
+let isSyncing = false;
+
 export async function syncLiveIpos(): Promise<{ totalScraped: number; created: number; updated: number; errors: string[] }> {
+  if (isSyncing) {
+    console.log('[scraper] Live sync already in progress. Skipping duplicate run.');
+    return { totalScraped: 0, created: 0, updated: 0, errors: [] };
+  }
+  isSyncing = true;
   const errors: string[] = [];
   let totalScraped = 0;
   let created = 0;
   let updated = 0;
 
-  // Clean up any unapplied SME IPOs from previous runs and expired IPOs whose listing date passed
   try {
-    const { cleanupExpiredIpos } = await import('./ipoStore.js');
-    await cleanupExpiredIpos();
+    // Clean up any unapplied SME IPOs from previous runs and expired IPOs whose listing date passed
+    try {
+      const { cleanupExpiredIpos } = await import('./ipoStore.js');
+      await cleanupExpiredIpos();
 
-    const all = await listIpos();
-    for (const item of all) {
-      if (item.category === 'SME' && !item.isApplied) {
-        const { deleteIpo } = await import('./ipoStore.js');
-        await deleteIpo(item.id);
+      const all = await listIpos();
+      for (const item of all) {
+        if (item.category === 'SME' && !item.isApplied) {
+          const { deleteIpo } = await import('./ipoStore.js');
+          await deleteIpo(item.id);
+        }
+      }
+    } catch (err) {
+      console.error('[scraper] Error cleaning SME / expired IPOs:', err);
+    }
+
+    let scraped: ScrapedIpo[] = [];
+    try {
+      scraped = await fetchLiveMarketIpos();
+      totalScraped = scraped.length;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('[scraper] Fetch error:', msg);
+      errors.push(msg);
+      return { totalScraped: 0, created: 0, updated: 0, errors };
+    }
+
+    const now = new Date();
+    for (const item of scraped) {
+      let detailLot: number | null = null;
+      let detailListingDate: string | null = null;
+      let detailAllotmentDate: string | null = null;
+      let detailSubscription: SubscriptionData | null = null;
+      if (item.url) {
+        const details = await fetchIpoGuruDetail(item.url);
+        detailLot = details.lotSize;
+        detailListingDate = details.listingDate;
+        detailAllotmentDate = details.allotmentDate;
+        detailSubscription = details.subscription;
+      }
+      if (!detailLot && item.issuePrice > 0) {
+        detailLot = Math.max(1, Math.round(14500 / item.issuePrice));
+      }
+      const targetLotSize = detailLot || 15;
+
+      try {
+        const parsedDates = parseBiddingDates(item.dates);
+        const parsedCloseDate = parsedDates.closeDate ? parsedDates.closeDate.toISOString() : undefined;
+        const parsedOpenDate = parsedDates.openDate ? parsedDates.openDate.toISOString() : undefined;
+
+        const existing = await findIpoByName(item.name);
+        if (existing) {
+          let trend: 'up' | 'down' | 'neutral' = 'neutral';
+          const prevGmpValue = existing.currentGmp !== null && existing.currentGmp !== undefined ? Number(existing.currentGmp) : null;
+          if (prevGmpValue !== null && item.gmp !== prevGmpValue) {
+            trend = item.gmp > prevGmpValue ? 'up' : 'down';
+          } else if (existing.gmpTrend) {
+            trend = existing.gmpTrend;
+          }
+
+          // Update live data while preserving user applied state & lots
+          const patch: Record<string, unknown> = {
+            currentGmp: item.gmp,
+            lastGmpAt: now.toISOString(),
+            lastGmpFetchAt: now.toISOString(),
+            gmpSource: 'IPOGuru Live',
+            gmpStale: false,
+            category: 'Mainboard',
+            marketStatus: item.marketStatus,
+            notes: item.dates ? `Bidding: ${item.dates}` : existing.notes,
+            lotSize: targetLotSize,
+          };
+          if (parsedCloseDate) patch.closeDate = parsedCloseDate;
+          if (parsedOpenDate) patch.openDate = parsedOpenDate;
+
+          if (prevGmpValue !== null && item.gmp !== prevGmpValue) {
+            patch.prevGmp = prevGmpValue;
+            patch.gmpTrend = trend;
+          }
+          if (detailListingDate) {
+            patch.listingDate = detailListingDate;
+          }
+          if (detailAllotmentDate) {
+            patch.allotmentDate = detailAllotmentDate;
+          }
+          if (detailSubscription) {
+            patch.subscription = detailSubscription;
+          }
+          if (item.issuePrice > 0) {
+            patch.issuePrice = item.issuePrice;
+          }
+          await updateIpo(existing.id, patch);
+          await appendGmpHistory(existing.id, item.gmp, 'IPOGuru Live', now);
+          updated++;
+        } else {
+          // Create new available Mainboard IPO
+          const newIpo = await createIpo({
+            name: item.name,
+            companyName: `${item.name} Ltd`,
+            symbol: item.name.replace(/[^a-zA-Z0-9]/g, '').slice(0, 10).toUpperCase(),
+            issuePrice: item.issuePrice || 100,
+            lotSize: targetLotSize,
+            lotsApplied: 0,
+            status: 'Available',
+            isApplied: false,
+            category: 'Mainboard',
+            marketStatus: item.marketStatus,
+            notes: item.dates ? `Bidding: ${item.dates}` : '',
+            openDate: parsedOpenDate,
+            closeDate: parsedCloseDate,
+            listingDate: detailListingDate || undefined,
+            allotmentDate: detailAllotmentDate || undefined,
+          });
+          await updateIpo(newIpo.id, {
+            currentGmp: item.gmp,
+            lastGmpAt: now.toISOString(),
+            lastGmpFetchAt: now.toISOString(),
+            gmpSource: 'IPOGuru Live',
+            gmpStale: false,
+            lotSize: targetLotSize,
+            openDate: parsedOpenDate,
+            closeDate: parsedCloseDate,
+            listingDate: detailListingDate || undefined,
+            allotmentDate: detailAllotmentDate || undefined,
+            subscription: detailSubscription || undefined,
+          });
+          await appendGmpHistory(newIpo.id, item.gmp, 'IPOGuru Live', now);
+          created++;
+        }
+
+      } catch (e) {
+        errors.push(`${item.name}: ${e instanceof Error ? e.message : String(e)}`);
       }
     }
-  } catch (err) {
-    console.error('[scraper] Error cleaning SME / expired IPOs:', err);
-  }
 
-  let scraped: ScrapedIpo[] = [];
-  try {
-    scraped = await fetchLiveMarketIpos();
-    totalScraped = scraped.length;
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error('[scraper] Fetch error:', msg);
-    errors.push(msg);
-    return { totalScraped: 0, created: 0, updated: 0, errors };
-  }
-
-  const now = new Date();
-  for (const item of scraped) {
-    let detailLot: number | null = null;
-    let detailListingDate: string | null = null;
-    let detailAllotmentDate: string | null = null;
-    let detailSubscription: SubscriptionData | null = null;
-    if (item.url) {
-      const details = await fetchIpoGuruDetail(item.url);
-      detailLot = details.lotSize;
-      detailListingDate = details.listingDate;
-      detailAllotmentDate = details.allotmentDate;
-      detailSubscription = details.subscription;
-    }
-    if (!detailLot && item.issuePrice > 0) {
-      detailLot = Math.max(1, Math.round(14500 / item.issuePrice));
-    }
-    const targetLotSize = detailLot || 15;
-
-    try {
-      const parsedDates = parseBiddingDates(item.dates);
-      const parsedCloseDate = parsedDates.closeDate ? parsedDates.closeDate.toISOString() : undefined;
-      const parsedOpenDate = parsedDates.openDate ? parsedDates.openDate.toISOString() : undefined;
-
-      const existing = await findIpoByName(item.name);
-      if (existing) {
-        let trend: 'up' | 'down' | 'neutral' = 'neutral';
-        const prevGmpValue = existing.currentGmp !== null && existing.currentGmp !== undefined ? Number(existing.currentGmp) : null;
-        if (prevGmpValue !== null && item.gmp !== prevGmpValue) {
-          trend = item.gmp > prevGmpValue ? 'up' : 'down';
-        } else if (existing.gmpTrend) {
-          trend = existing.gmpTrend;
-        }
-
-        // Update live data while preserving user applied state & lots
-        const patch: Record<string, unknown> = {
-          currentGmp: item.gmp,
-          lastGmpAt: now.toISOString(),
-          lastGmpFetchAt: now.toISOString(),
-          gmpSource: 'IPOGuru Live',
-          gmpStale: false,
-          category: 'Mainboard',
-          marketStatus: item.marketStatus,
-          notes: item.dates ? `Bidding: ${item.dates}` : existing.notes,
-          lotSize: targetLotSize,
-        };
-        if (parsedCloseDate) patch.closeDate = parsedCloseDate;
-        if (parsedOpenDate) patch.openDate = parsedOpenDate;
-
-        if (prevGmpValue !== null && item.gmp !== prevGmpValue) {
-          patch.prevGmp = prevGmpValue;
-          patch.gmpTrend = trend;
-        }
-        if (detailListingDate) {
-          patch.listingDate = detailListingDate;
-        }
-        if (detailAllotmentDate) {
-          patch.allotmentDate = detailAllotmentDate;
-        }
-        if (detailSubscription) {
-          patch.subscription = detailSubscription;
-        }
-        if (item.issuePrice > 0) {
-          patch.issuePrice = item.issuePrice;
-        }
-        await updateIpo(existing.id, patch);
-        await appendGmpHistory(existing.id, item.gmp, 'IPOGuru Live', now);
-        updated++;
-      } else {
-        // Create new available Mainboard IPO
-        const newIpo = await createIpo({
-          name: item.name,
-          companyName: `${item.name} Ltd`,
-          symbol: item.name.replace(/[^a-zA-Z0-9]/g, '').slice(0, 10).toUpperCase(),
-          issuePrice: item.issuePrice || 100,
-          lotSize: targetLotSize,
-          lotsApplied: 0,
-          status: 'Available',
-          isApplied: false,
-          category: 'Mainboard',
-          marketStatus: item.marketStatus,
-          notes: item.dates ? `Bidding: ${item.dates}` : '',
-          openDate: parsedOpenDate,
-          closeDate: parsedCloseDate,
-          listingDate: detailListingDate || undefined,
-          allotmentDate: detailAllotmentDate || undefined,
-        });
-        await updateIpo(newIpo.id, {
-          currentGmp: item.gmp,
-          lastGmpAt: now.toISOString(),
-          lastGmpFetchAt: now.toISOString(),
-          gmpSource: 'IPOGuru Live',
-          gmpStale: false,
-          lotSize: targetLotSize,
-          openDate: parsedOpenDate,
-          closeDate: parsedCloseDate,
-          listingDate: detailListingDate || undefined,
-          allotmentDate: detailAllotmentDate || undefined,
-          subscription: detailSubscription || undefined,
-        });
-        await appendGmpHistory(newIpo.id, item.gmp, 'IPOGuru Live', now);
-        created++;
+    console.log(`[scraper] Live Mainboard IPO sync complete: ${totalScraped} scraped, ${created} created, ${updated} updated.`);
+    if (created > 0 || updated > 0) {
+      try {
+        const { broadcastUpdate } = await import('./sseService.js');
+        broadcastUpdate('all');
+      } catch {
+        // ignore
       }
-
-    } catch (e) {
-      errors.push(`${item.name}: ${e instanceof Error ? e.message : String(e)}`);
     }
+    return { totalScraped, created, updated, errors };
+  } finally {
+    isSyncing = false;
   }
-
-  console.log(`[scraper] Live Mainboard IPO sync complete: ${totalScraped} scraped, ${created} created, ${updated} updated.`);
-  if (created > 0 || updated > 0) {
-    try {
-      const { broadcastUpdate } = await import('./sseService.js');
-      broadcastUpdate('all');
-    } catch {
-      // ignore
-    }
-  }
-  return { totalScraped, created, updated, errors };
 }

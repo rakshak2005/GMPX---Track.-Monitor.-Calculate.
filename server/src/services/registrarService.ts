@@ -34,6 +34,7 @@ function postJson(url: string, postData: Record<string, unknown>, extraHeaders: 
       u,
       {
         method: 'POST',
+        timeout: 5000,
         headers: {
           'Content-Type': 'application/json; charset=utf-8',
           'Content-Length': Buffer.byteLength(data),
@@ -56,6 +57,9 @@ function postJson(url: string, postData: Record<string, unknown>, extraHeaders: 
         });
       },
     );
+    req.on('timeout', () => {
+      req.destroy(new Error('Request timed out after 5000ms'));
+    });
     req.on('error', reject);
     req.write(data);
     req.end();
@@ -81,7 +85,7 @@ export async function getKfintechIpos(): Promise<{ clientId: string; name: strin
   }
 
   return new Promise((resolve) => {
-    https.get('https://ipostatus.kfintech.com/', { headers: { 'User-Agent': 'Mozilla/5.0' } }, (res) => {
+    const req = https.get('https://ipostatus.kfintech.com/', { headers: { 'User-Agent': 'Mozilla/5.0' }, timeout: 5000 }, (res) => {
       let html = '';
       res.on('data', (d) => (html += d));
       res.on('end', () => {
@@ -92,7 +96,7 @@ export async function getKfintechIpos(): Promise<{ clientId: string; name: strin
         }
 
         const jsUrl = 'https://ipostatus.kfintech.com/' + scriptMatch[1].replace(/^\.\//, '');
-        https.get(jsUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } }, (jsRes) => {
+        const jsReq = https.get(jsUrl, { headers: { 'User-Agent': 'Mozilla/5.0' }, timeout: 5000 }, (jsRes) => {
           let jsCode = '';
           jsRes.on('data', (d) => (jsCode += d));
           jsRes.on('end', () => {
@@ -109,9 +113,13 @@ export async function getKfintechIpos(): Promise<{ clientId: string; name: strin
             }
             resolve(kfinCache?.ipos || []);
           });
-        }).on('error', () => resolve(kfinCache?.ipos || []));
+        });
+        jsReq.on('timeout', () => { jsReq.destroy(); resolve(kfinCache?.ipos || []); });
+        jsReq.on('error', () => resolve(kfinCache?.ipos || []));
       });
-    }).on('error', () => resolve(kfinCache?.ipos || []));
+    });
+    req.on('timeout', () => { req.destroy(); resolve(kfinCache?.ipos || []); });
+    req.on('error', () => resolve(kfinCache?.ipos || []));
   });
 }
 
@@ -361,10 +369,11 @@ export async function getBigshareIpos(): Promise<{ clientId: string; name: strin
   }
 
   return new Promise((resolve) => {
-    https
+    const req = https
       .get(
         'https://ipo.bigshareonline.com/IPO_Status.html',
         {
+          timeout: 5000,
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
           },
@@ -390,8 +399,9 @@ export async function getBigshareIpos(): Promise<{ clientId: string; name: strin
             resolve(list);
           });
         },
-      )
-      .on('error', () => resolve(bigshareCache?.ipos || []));
+      );
+    req.on('timeout', () => { req.destroy(); resolve(bigshareCache?.ipos || []); });
+    req.on('error', () => resolve(bigshareCache?.ipos || []));
   });
 }
 
