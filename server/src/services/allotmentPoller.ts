@@ -79,7 +79,7 @@ export async function runAllotmentPollCycle(): Promise<void> {
         (ipo) =>
           (ipo.isApplied || (ipo.lotsApplied ?? 0) > 0) &&
           (ipo.status === 'Applied' || ipo.status === 'Allotment Pending') &&
-          isTodayOrPastIst(ipo.allotmentDate),
+          (isTodayOrPastIst(ipo.allotmentDate) || !ipo.allotmentDate || (ipo.closeDate && isTodayOrPastIst(ipo.closeDate)) || ipo.marketStatus === 'Closed'),
       );
 
       for (const ipo of candidates) {

@@ -21,6 +21,8 @@ interface CheckResultModal {
   message?: string;
   appNo?: string;
   dpClid?: string;
+  emailSent?: boolean;
+  emailRecipient?: string;
 }
 
 function getRegistrarPortal(registrarName?: string | null): { name: string; url: string } {
@@ -177,6 +179,8 @@ export function AllotmentDeskPage() {
         message: res.message,
         appNo: res.appNo,
         dpClid: res.dpClid,
+        emailSent: res.emailSent,
+        emailRecipient: res.emailRecipient,
       });
 
       // Invalidate queries so status changes reflect immediately
@@ -589,6 +593,15 @@ export function AllotmentDeskPage() {
               {modalResult.message && (
                 <div className="rounded-lg bg-black/40 border border-white/[0.06] p-3 text-xs text-slate-300 mt-2">
                   {modalResult.message}
+                </div>
+              )}
+
+              {modalResult.emailSent && modalResult.emailRecipient && (
+                <div className="flex items-center gap-2 rounded-lg bg-emerald-500/10 border border-emerald-500/25 px-3 py-2 text-xs text-emerald-300 mt-2">
+                  <Mail size={14} className="shrink-0 text-emerald-400" />
+                  <span>
+                    Email alert dispatched to <strong>{modalResult.emailRecipient}</strong>
+                  </span>
                 </div>
               )}
             </div>

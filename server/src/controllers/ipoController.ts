@@ -198,12 +198,54 @@ export const checkAllotmentHandler = wrap(async (req: any, res) => {
 
   const result = await checkIpoAllotment(ipo.companyName || ipo.name, pan);
 
+  let emailSent = false;
+  let emailRecipient: string | undefined;
+
   if (result.found && (result.status === 'ALLOTTED' || result.status === 'NOT_ALLOTTED')) {
     const newStatus = result.status === 'ALLOTTED' ? 'Allotted' : 'Not Allotted';
     const allottedLots = result.status === 'ALLOTTED' ? Math.max(1, Math.floor((result.allottedShares || 0) / (ipo.lotSize || 1))) : 0;
     await updateIpoStatus(ipo.id, newStatus, req.userId, allottedLots);
+
+    // Send Real-time Gmail Alert
+    try {
+      const { sendGmailNotification, formatEmailAllotmentAlert } = await import('../services/emailService.js');
+      const { query } = await import('../config/db.js');
+      const { env } = await import('../config/env.js');
+
+      let targetEmail = env.GMAIL_NOTIFY_TO || env.GMAIL_USER;
+      if (req.userId) {
+        const u = await query<{ email: string; preferences: { alertEmail?: string } }>(
+          'SELECT email, preferences FROM users WHERE id = $1',
+          [req.userId]
+        );
+        if (u.rows[0]) {
+          targetEmail = u.rows[0].preferences?.alertEmail || u.rows[0].email || targetEmail;
+        }
+      }
+
+      if (targetEmail) {
+        emailRecipient = targetEmail;
+        const mailData = formatEmailAllotmentAlert(ipo.name, result.status, result.allottedShares, result.registrar);
+        const mailRes = await sendGmailNotification({
+          to: targetEmail,
+          subject: mailData.subject,
+          text: mailData.text,
+          html: mailData.html,
+        });
+        emailSent = mailRes.success;
+      }
+    } catch (e) {
+      console.error('[checkAllotmentHandler] Failed to dispatch email notification:', e);
+    }
   }
 
-  res.json({ data: result });
+  res.json({
+    data: {
+      ...result,
+      emailSent,
+      emailRecipient,
+    },
+  });
 });
+
 

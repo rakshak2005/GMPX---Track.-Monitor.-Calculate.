@@ -9,6 +9,7 @@ import { CalendarPage } from './pages/CalendarPage.js';
 import { IpoDetail } from './pages/IpoDetail.js';
 import { SettingsPage } from './pages/SettingsPage.js';
 import { AllotmentDeskPage } from './pages/AllotmentDeskPage.js';
+import { RetailAllotmentPage } from './pages/RetailAllotmentPage.js';
 import { AddIpoModal } from './components/IpoModals.js';
 import { useIpoMutations, useRealtimeSync } from './hooks/useIpos.js';
 import { pushToast } from './hooks/useAlerts.js';
@@ -34,6 +35,7 @@ function Shell() {
           <Route path="ipos" element={<MyIpos />} />
           <Route path="gmp" element={<GmpTracker />} />
           <Route path="subscription" element={<SubscriptionPage />} />
+          <Route path="retail-allotment" element={<RetailAllotmentPage />} />
           <Route path="profit" element={<ProfitTracker />} />
           <Route path="allotment" element={<AllotmentDeskPage />} />
           <Route path="calendar" element={<CalendarPage />} />

@@ -81,6 +81,8 @@ export const api = {
       appNo?: string;
       dpClid?: string;
       message?: string;
+      emailSent?: boolean;
+      emailRecipient?: string;
     }>(`/api/ipos/${id}/check-allotment`, {
       method: 'POST',
       body: JSON.stringify({ pan }),

@@ -102,4 +102,79 @@ export function determineMarketStatus(
   return 'Upcoming';
 }
 
+export interface RetailAllotmentOdds {
+  probPct: number;
+  oneInX: number;
+  perThousand: number;
+  isLottery: boolean;
+  statusText: string;
+}
+
+export function calculateRetailAllotmentProbability(
+  retailSub: number | null | undefined
+): RetailAllotmentOdds {
+  if (retailSub === null || retailSub === undefined || retailSub <= 0) {
+    return {
+      probPct: 100,
+      oneInX: 1,
+      perThousand: 1000,
+      isLottery: false,
+      statusText: 'Awaiting Bids / 100% Firm Allotment',
+    };
+  }
+
+  if (retailSub <= 1.0) {
+    return {
+      probPct: 100,
+      oneInX: 1,
+      perThousand: 1000,
+      isLottery: false,
+      statusText: '100% Firm Allotment (All valid applicants get at least 1 lot)',
+    };
+  }
+
+  // Oversubscribed: SEBI proportionate lottery allotment (max 1 lot per applicant)
+  const prob = (1 / retailSub) * 100;
+  const probPct = Math.round(prob * 100) / 100;
+  const oneInX = Math.max(1, Math.round(retailSub));
+  const perThousand = Math.min(1000, Math.round((1 / retailSub) * 1000));
+
+  return {
+    probPct,
+    oneInX,
+    perThousand,
+    isLottery: true,
+    statusText: `Lottery Draw: 1 in ${oneInX} applicants gets 1 lot (${probPct}%)`,
+  };
+}
+
+export function calculateMultiAccountProbability(
+  probPct: number,
+  panCount: number
+): number {
+  if (panCount <= 0) return 0;
+  if (probPct >= 100) return 100;
+  const p = Math.max(0, Math.min(1, probPct / 100));
+  // Probability of at least 1 allotment: 1 - (1 - p)^n
+  const overallP = 1 - Math.pow(1 - p, panCount);
+  return Math.round(overallP * 100 * 100) / 100;
+}
+
+export function calculateMaxRetailLots(
+  issuePrice: number,
+  lotSize: number,
+  sebiLimit: number = 200000
+): { maxLots: number; maxShares: number; maxInvestment: number } {
+  if (!issuePrice || issuePrice <= 0 || !lotSize || lotSize <= 0) {
+    return { maxLots: 1, maxShares: lotSize || 1, maxInvestment: (issuePrice || 0) * (lotSize || 1) };
+  }
+  const lotCost = issuePrice * lotSize;
+  const maxLots = Math.max(1, Math.floor(sebiLimit / lotCost));
+  return {
+    maxLots,
+    maxShares: maxLots * lotSize,
+    maxInvestment: maxLots * lotCost,
+  };
+}
+
 

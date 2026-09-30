@@ -1,12 +1,7 @@
 import pg from 'pg';
-import dns from 'node:dns/promises';
-import net from 'node:net';
 import { env } from './env.js';
 
 const { Pool } = pg;
-
-// Set fallback public DNS servers (Google + Cloudflare) in case ISP DNS blocks *.neon.tech
-dns.setServers(['8.8.8.8', '1.1.1.1', '8.8.4.4']);
 
 let pool: pg.Pool | null = null;
 let isConnected = false;
@@ -17,54 +12,12 @@ export async function getDbPool(): Promise<pg.Pool> {
   // Use the pooled Neon connection string to ensure smooth reconnection even when compute sleeps
   const connStr = env.DATABASE_URL_POOLED || env.DATABASE_URL;
 
-
-  // On Render / Linux cloud environments, standard pg connectionString works natively.
-  // We only need custom net.stream DNS pre-resolution if running on Windows / local ISP DNS blocks.
-  const isWindows = process.platform === 'win32';
-
-  if (!isWindows) {
-    pool = new Pool({
-      connectionString: connStr,
-      ssl: { rejectUnauthorized: false },
-      max: 10,
-      idleTimeoutMillis: 30000,
-    });
-    return pool;
-  }
-
-  // Windows / local DNS fallback
-  const parsed = new URL(connStr);
-  const host = parsed.hostname;
-  const port = parseInt(parsed.port || '5432', 10);
-  const user = decodeURIComponent(parsed.username);
-  const password = decodeURIComponent(parsed.password);
-  const database = parsed.pathname.replace(/^\//, '');
-
-  let cachedIps: string[] = [];
-  try {
-    const ips = await dns.resolve4(host);
-    if (ips && ips.length > 0) cachedIps = ips;
-  } catch {
-    cachedIps = ['52.76.246.190', '52.76.212.156', '3.0.27.201'];
-  }
-
   pool = new Pool({
-    user,
-    password,
-    database,
-    port,
-    host,
-    ssl: { rejectUnauthorized: false, servername: host },
+    connectionString: connStr,
+    ssl: { rejectUnauthorized: false },
     max: 10,
-    idleTimeoutMillis: 10000,
+    idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 10000,
-    keepAlive: true,
-    keepAliveInitialDelayMillis: 10000,
-    stream: () => {
-      // Connect to resolved IP directly to bypass Windows getaddrinfo DNS timeout
-      const ip = cachedIps[Math.floor(Math.random() * cachedIps.length)] || '52.76.246.190';
-      return net.connect({ host: ip, port });
-    },
   });
 
 

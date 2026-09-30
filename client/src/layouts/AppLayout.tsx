@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { NavLink, Outlet, Link } from 'react-router-dom';
 import {
-  Radio, TrendingUp, BarChart3, BriefcaseBusiness, WalletCards, CalendarDays, Settings2, Menu, X, User, LogIn, LogOut, CheckCircle2, ShieldCheck, ExternalLink, Activity, type LucideIcon
+  Radio, TrendingUp, BarChart3, BriefcaseBusiness, WalletCards, CalendarDays, Settings2, Menu, X, User, LogIn, LogOut, CheckCircle2, ShieldCheck, ExternalLink, Activity, Users, type LucideIcon
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth.js';
 import { AuthModal } from '../components/AuthModal.js';
@@ -18,6 +18,7 @@ const NAV_SECTIONS: NavSection[] = [
       { to: '/', label: 'Live IPOs', icon: Radio, end: true },
       { to: '/gmp', label: 'GMP Pulse', icon: TrendingUp },
       { to: '/subscription', label: 'Subscription', icon: BarChart3 },
+      { to: '/retail-allotment', label: 'Retail Chances', icon: Users, badge: 'NEW' },
       {
         to: 'https://www.nseindia.com/market-data/new-stock-exchange-listings-today',
         label: 'NSE Pre-Listing',
