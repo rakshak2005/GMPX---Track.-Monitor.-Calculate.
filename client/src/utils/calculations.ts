@@ -177,4 +177,124 @@ export function calculateMaxRetailLots(
   };
 }
 
+/**
+ * Extracts explicit retail reserved shares if specified in notes, DRHP text, or custom fields.
+ * Supports patterns like "Retail: 1,10,00,000 shares", "Retail shares: 4256016", "Retail Quota: 42,56,016 shares", etc.
+ */
+export function parseRetailReservedShares(notes?: string | null): number | null {
+  if (!notes) return null;
+  // Match direct shares: e.g. "Retail: 9174677 shares", "Retail: 2429066"
+  const match = notes.match(/Retail(?:\s+Reserved|\s+Shares)?\s*:\s*([0-9,]+(?:\.[0-9]+)?)\s*(?:Cr|Crore|Lakh|Shares)?/i);
+  if (match) {
+    const rawNumStr = match[1].replace(/,/g, '');
+    const num = parseFloat(rawNumStr);
+    if (Number.isFinite(num) && num > 0) {
+      const fullText = match[0].toLowerCase();
+      if (fullText.includes('cr') || fullText.includes('crore')) {
+        return Math.round(num * 10000000);
+      }
+      if (fullText.includes('lakh')) {
+        return Math.round(num * 100000);
+      }
+      return Math.round(num);
+    }
+  }
+
+  // Derive from Issue Size and Retail Quota percentage if present in notes
+  const isizeMatch = notes.match(/Issue\s+Size\s*:\s*₹?\s*([0-9,.]+)\s*Cr/i);
+  const quotaMatch = notes.match(/Retail\s+Quota\s*:\s*([0-9.]+)%/i);
+  if (isizeMatch) {
+    const isizeCr = parseFloat(isizeMatch[1].replace(/,/g, ''));
+    const quotaPct = quotaMatch ? parseFloat(quotaMatch[1]) : 35;
+    // Value in rupees
+    const retailRupees = isizeCr * 10000000 * (quotaPct / 100);
+    return Math.round(retailRupees); // Returns retail quota value in rupees if shares not explicit
+  }
+
+  return null;
+}
+
+export function parseIpoNotesMetadata(notes?: string | null): {
+  issueSizeCr: number | null;
+  retailQuotaPct: number | null;
+  retailShares: number | null;
+} {
+  if (!notes) return { issueSizeCr: null, retailQuotaPct: null, retailShares: null };
+  
+  const isizeMatch = notes.match(/Issue\s+Size\s*:\s*₹?\s*([0-9,.]+)\s*Cr/i);
+  const issueSizeCr = isizeMatch ? parseFloat(isizeMatch[1].replace(/,/g, '')) : null;
+
+  const quotaMatch = notes.match(/Retail\s+Quota\s*:\s*([0-9.]+)%/i);
+  const retailQuotaPct = quotaMatch ? parseFloat(quotaMatch[1]) : null;
+
+  const sharesMatch = notes.match(/Retail(?:\s+Reserved|\s+Shares)?\s*:\s*([0-9,]+)\s*shares/i);
+  const retailShares = sharesMatch ? parseInt(sharesMatch[1].replace(/,/g, ''), 10) : null;
+
+  return { issueSizeCr, retailQuotaPct, retailShares };
+}
+
+export interface RetailCapacityTier {
+  multiple: number;
+  estimatedApplicants: number;
+  availableLots: number;
+  chancePct: number;
+}
+
+export interface RetailCapacityResult {
+  retailReservedShares: number | null;
+  lotSize: number;
+  retailLotCapacity: number;
+  currentMultiple: number | null;
+  currentEstimatedApplicants: number | null;
+  currentEstimatedChance: number | null;
+  tiers: RetailCapacityTier[];
+}
+
+export function calculateRetailAllotmentCapacity(
+  retailReservedShares: number | null | undefined,
+  lotSize: number,
+  currentRetailMultiple?: number | null
+): RetailCapacityResult {
+  const safeLotSize = Math.max(1, lotSize || 1);
+  const safeReserved = retailReservedShares && retailReservedShares > 0 ? retailReservedShares : null;
+  
+  // CORE CALCULATION: Retail Allotment Capacity (1-lot equivalents) = FLOOR(Retail Reserved Shares / Retail Lot Size)
+  const retailLotCapacity = safeReserved ? Math.floor(safeReserved / safeLotSize) : 0;
+
+  const multipliers = [1, 2, 3, 5, 10, 20];
+  const tiers: RetailCapacityTier[] = multipliers.map((m) => {
+    const estApplicants = retailLotCapacity > 0 ? Math.round(retailLotCapacity * m) : 0;
+    const chancePct = m <= 1 ? 100 : Math.round((1 / m) * 100 * 100) / 100;
+    return {
+      multiple: m,
+      estimatedApplicants: estApplicants,
+      availableLots: retailLotCapacity,
+      chancePct,
+    };
+  });
+
+  let currentEstimatedApplicants: number | null = null;
+  let currentEstimatedChance: number | null = null;
+
+  if (currentRetailMultiple != null && currentRetailMultiple > 0) {
+    if (retailLotCapacity > 0) {
+      currentEstimatedApplicants = Math.round(retailLotCapacity * currentRetailMultiple);
+      // Estimated 1-Lot Probability = MIN(1, Retail Allotment Capacity / Estimated Applicants) * 100
+      currentEstimatedChance = Math.min(100, Math.round((retailLotCapacity / currentEstimatedApplicants) * 100 * 100) / 100);
+    } else {
+      currentEstimatedChance = currentRetailMultiple <= 1 ? 100 : Math.round((1 / currentRetailMultiple) * 100 * 100) / 100;
+    }
+  }
+
+  return {
+    retailReservedShares: safeReserved,
+    lotSize: safeLotSize,
+    retailLotCapacity,
+    currentMultiple: currentRetailMultiple ?? null,
+    currentEstimatedApplicants,
+    currentEstimatedChance,
+    tiers,
+  };
+}
+
 

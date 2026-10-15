@@ -5,6 +5,7 @@ import { useGmpHistory, useIpo, useIpoMutations, useSubHistory } from '../hooks/
 import { api } from '../services/api.js';
 import { GmpChart } from '../components/GmpChart.js';
 import { SubscriptionCard, SubscriptionChart } from '../components/SubscriptionChart.js';
+import { RetailAllotmentCapacitySection } from '../components/RetailAllotmentCapacitySection.js';
 import { StatusBadge } from '../components/StatusBadge.js';
 import { Countdown } from '../components/Countdown.js';
 import { DeleteConfirmation, EditIpoModal } from '../components/IpoModals.js';
@@ -140,12 +141,17 @@ export function IpoDetail() {
       <ListingDay ipo={ipo} saving={update.isPending} onSave={(p) => update.mutate({ id: ipo.id, payload: p })} />
 
       <div className="glass p-5">
-        <div className="card-label">APPLICATION</div>
+        <div className="flex items-center justify-between">
+          <div className="card-label">APPLICATION & BID SIZING</div>
+          <div className="text-[11px] text-cyan-400 font-medium">
+            1x Application = 1 Lot ({ipo.lotSize} sh · {inr(ipo.issuePrice * ipo.lotSize)})
+          </div>
+        </div>
         <div className="mt-2 grid grid-cols-2 gap-3 text-sm sm:grid-cols-5">
           <div><div className="text-slate-500">Price</div><div className="num font-semibold">{inr(ipo.issuePrice)}</div></div>
-          <div><div className="text-slate-500">Lot size</div><div className="num font-semibold">{ipo.lotSize}</div></div>
+          <div><div className="text-slate-500">Lot size</div><div className="num font-semibold">{ipo.lotSize} shares</div></div>
           <div><div className="text-slate-500">Lots applied</div><div className="num font-semibold">{ipo.lotsApplied}</div></div>
-          <div><div className="text-slate-500">Quantity</div><div className="num font-semibold">{qty}</div></div>
+          <div><div className="text-slate-500">Quantity</div><div className="num font-semibold">{qty} shares</div></div>
           <div><div className="text-slate-500">Invested</div><div className="num font-semibold">{inr(invested)}</div></div>
         </div>
         <div className="mt-4 grid gap-3 border-t border-white/5 pt-4 sm:grid-cols-3">
@@ -176,6 +182,9 @@ export function IpoDetail() {
         </div>
       </div>
       <SubscriptionChart history={subHist.data ?? []} />
+
+      {/* Professional Retail Allotment Capacity Section */}
+      <RetailAllotmentCapacitySection ipo={ipo} />
 
       <div className="glass p-5">
         <div className="card-label">MY NOTES</div>

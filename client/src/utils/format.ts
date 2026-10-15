@@ -5,6 +5,26 @@ export function inr(n: number | null | undefined): string {
   return `${sign}₹${abs.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
 }
 
+export function formatIndianNumber(n: number | null | undefined): string {
+  if (n === null || n === undefined || !Number.isFinite(n)) return '---';
+  return Math.round(n).toLocaleString('en-IN');
+}
+
+export function formatLakhCrore(n: number | null | undefined, unitSuffix: boolean = true): string {
+  if (n === null || n === undefined || !Number.isFinite(n)) return '---';
+  const abs = Math.abs(n);
+  const sign = n < 0 ? '-' : '';
+  if (abs >= 10000000) {
+    const cr = (abs / 10000000).toFixed(2);
+    return `${sign}${cr}${unitSuffix ? ' Cr' : ''}`;
+  }
+  if (abs >= 100000) {
+    const lk = (abs / 100000).toFixed(2);
+    return `${sign}${lk}${unitSuffix ? ' Lakh' : ''}`;
+  }
+  return `${sign}${abs.toLocaleString('en-IN')}`;
+}
+
 export function pct(n: number | null | undefined): string {
   if (n === null || n === undefined || !Number.isFinite(n)) return '---';
   const sign = n > 0 ? '+' : '';

@@ -34,6 +34,8 @@ export interface Ipo {
   actualListingPrice?: number | null;
   notes?: string;
   registrar?: string | null;
+  retailReservedShares?: number | null;
+  totalRetailApplications?: number | null;
   // derived (server or client computed)
   quantity?: number;
   investment?: number;

@@ -80,8 +80,11 @@ async function fetchIpoGuruDetail(url: string | null): Promise<{
   listingDate: string | null;
   allotmentDate: string | null;
   subscription: SubscriptionData | null;
+  issueSizeCr: number | null;
+  retailReservedShares: number | null;
+  retailQuotaPct: number | null;
 }> {
-  if (!url) return { lotSize: null, listingDate: null, allotmentDate: null, subscription: null };
+  if (!url) return { lotSize: null, listingDate: null, allotmentDate: null, subscription: null, issueSizeCr: null, retailReservedShares: null, retailQuotaPct: null };
   try {
     const res = await fetch(url, {
       headers: {
@@ -89,7 +92,7 @@ async function fetchIpoGuruDetail(url: string | null): Promise<{
       },
       signal: AbortSignal.timeout(6000),
     });
-    if (!res.ok) return { lotSize: null, listingDate: null, allotmentDate: null, subscription: null };
+    if (!res.ok) return { lotSize: null, listingDate: null, allotmentDate: null, subscription: null, issueSizeCr: null, retailReservedShares: null, retailQuotaPct: null };
     const html = await res.text();
 
     // 1. Lot size from table or text
@@ -124,9 +127,38 @@ async function fetchIpoGuruDetail(url: string | null): Promise<{
       subscription = await fetchSubscriptionData(slugMatch[1]);
     }
 
-    return { lotSize, listingDate, allotmentDate, subscription };
+    // 5. Extract Issue Size in Crores
+    let issueSizeCr: number | null = null;
+    const isizeMatch = html.match(/Issue\s+Size[\s\S]*?₹\s*([0-9,.]+)\s*Cr/i);
+    if (isizeMatch) {
+      const parsed = parseFloat(isizeMatch[1].replace(/,/g, ''));
+      if (Number.isFinite(parsed) && parsed > 0) issueSizeCr = parsed;
+    }
+
+    // 6. Extract Retail Reservation Quota & Shares
+    let retailReservedShares: number | null = null;
+    let retailQuotaPct: number | null = null;
+    const resvRows = html.match(/<div[^>]*class=["']dc-resv-row["'][^>]*title=["']([^"']+)["'][^>]*>[\s\S]*?<\/div>/gi) || [];
+    for (const row of resvRows) {
+      if (/Retail/i.test(row)) {
+        const titleMatch = row.match(/title=["']([^"']+)["']/i);
+        const titleText = titleMatch ? titleMatch[1] : '';
+        const shMatch = titleText.match(/([0-9,]+)\s*shares/i);
+        if (shMatch) {
+          const s = parseInt(shMatch[1].replace(/,/g, ''), 10);
+          if (Number.isFinite(s) && s > 0) retailReservedShares = s;
+        }
+        const pctMatch = titleText.match(/([0-9.]+)%/);
+        if (pctMatch) {
+          const p = parseFloat(pctMatch[1]);
+          if (Number.isFinite(p) && p > 0) retailQuotaPct = p;
+        }
+      }
+    }
+
+    return { lotSize, listingDate, allotmentDate, subscription, issueSizeCr, retailReservedShares, retailQuotaPct };
   } catch {
-    return { lotSize: null, listingDate: null, allotmentDate: null, subscription: null };
+    return { lotSize: null, listingDate: null, allotmentDate: null, subscription: null, issueSizeCr: null, retailReservedShares: null, retailQuotaPct: null };
   }
 }
 
@@ -244,17 +276,40 @@ export async function syncLiveIpos(): Promise<{ totalScraped: number; created: n
       let detailListingDate: string | null = null;
       let detailAllotmentDate: string | null = null;
       let detailSubscription: SubscriptionData | null = null;
+      let detailIssueSizeCr: number | null = null;
+      let detailRetailReservedShares: number | null = null;
+      let detailRetailQuotaPct: number | null = null;
+
       if (item.url) {
         const details = await fetchIpoGuruDetail(item.url);
         detailLot = details.lotSize;
         detailListingDate = details.listingDate;
         detailAllotmentDate = details.allotmentDate;
         detailSubscription = details.subscription;
+        detailIssueSizeCr = details.issueSizeCr;
+        detailRetailReservedShares = details.retailReservedShares;
+        detailRetailQuotaPct = details.retailQuotaPct;
       }
       if (!detailLot && item.issuePrice > 0) {
         detailLot = Math.max(1, Math.round(14500 / item.issuePrice));
       }
       const targetLotSize = detailLot || 15;
+
+      // Calculate exact or estimated retail reserved shares for this specific IPO
+      let retailSharesToNote: number | null = detailRetailReservedShares;
+      if (!retailSharesToNote && detailIssueSizeCr && detailIssueSizeCr > 0 && item.issuePrice > 0) {
+        const quotaMultiplier = (detailRetailQuotaPct || 35) / 100;
+        const retailValue = detailIssueSizeCr * 10000000 * quotaMultiplier;
+        retailSharesToNote = Math.round(retailValue / item.issuePrice);
+      }
+
+      // Format custom notes containing specific IPO metadata
+      const noteParts: string[] = [];
+      if (item.dates) noteParts.push(`Bidding: ${item.dates}`);
+      if (detailIssueSizeCr) noteParts.push(`Issue Size: ₹${detailIssueSizeCr} Cr`);
+      if (detailRetailQuotaPct) noteParts.push(`Retail Quota: ${detailRetailQuotaPct}%`);
+      if (retailSharesToNote) noteParts.push(`Retail: ${retailSharesToNote} shares`);
+      const constructedNotes = noteParts.join(' | ');
 
       try {
         const parsedDates = parseBiddingDates(item.dates);
@@ -280,7 +335,7 @@ export async function syncLiveIpos(): Promise<{ totalScraped: number; created: n
             gmpStale: false,
             category: 'Mainboard',
             marketStatus: item.marketStatus,
-            notes: item.dates ? `Bidding: ${item.dates}` : existing.notes,
+            notes: constructedNotes || existing.notes,
             lotSize: targetLotSize,
           };
           if (parsedCloseDate) patch.closeDate = parsedCloseDate;
@@ -318,7 +373,7 @@ export async function syncLiveIpos(): Promise<{ totalScraped: number; created: n
             isApplied: false,
             category: 'Mainboard',
             marketStatus: item.marketStatus,
-            notes: item.dates ? `Bidding: ${item.dates}` : '',
+            notes: constructedNotes || '',
             openDate: parsedOpenDate,
             closeDate: parsedCloseDate,
             listingDate: detailListingDate || undefined,
