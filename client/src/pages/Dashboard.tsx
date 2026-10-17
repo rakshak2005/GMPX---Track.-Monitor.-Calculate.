@@ -399,13 +399,13 @@ export function Dashboard({ onAdd }: { onAdd?: () => void }) {
           </div>
 
           {/* Terminal Tabs Filter */}
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5">
-            <div className="inline-flex rounded-lg bg-black/30 p-0.5 border border-white/[0.08] backdrop-blur-sm">
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap pb-0.5">
+            <div className="inline-flex rounded-lg bg-black/30 p-0.5 border border-white/[0.08] backdrop-blur-sm max-w-full overflow-x-auto no-scrollbar">
               {(['All', 'Open', 'Upcoming', 'Closed'] as const).map((m) => (
                 <button
                   key={m}
                   onClick={() => setFilterMarket(m)}
-                  className={`rounded-md px-3.5 py-1 text-xs font-bold tracking-wide whitespace-nowrap transition-all ${
+                  className={`rounded-md px-3 py-1 text-xs font-bold tracking-wide whitespace-nowrap transition-all ${
                     filterMarket === m
                       ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-[0_0_12px_rgba(59,130,246,0.5)] border border-blue-400/30'
                       : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
