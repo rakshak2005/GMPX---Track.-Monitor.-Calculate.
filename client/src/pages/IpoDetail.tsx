@@ -36,11 +36,24 @@ function GmpHero({ ipo }: { ipo: Ipo }) {
         <div className="mt-2 text-[11px] text-slate-500">Issue price {inr(ipo.issuePrice)} • {ipo.lotSize} sh/lot</div>
       </div>
       <div className="rounded-lg bg-[#090D17] border border-white/[0.06] p-3.5 sm:bg-transparent sm:p-0 sm:border-0">
-        <div className="card-label"><Tooltip label="Estimated gross profit based on the current GMP and your expected allotted quantity.">POTENTIAL LISTING GAIN</Tooltip></div>
-        <div className={`num mt-1 text-2xl sm:text-3xl font-black ${(ipo.estProfit ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-          {ipo.estProfit != null ? money(ipo.estProfit) : '—'}
-        </div>
-        <div className="mt-2 text-[11px] text-slate-500">Potential listing gain {pct(ipo.gmpPct)} • estimate, not guaranteed</div>
+        <div className="card-label"><Tooltip label="Estimated gross profit based on current GMP and applied quantity (or 1 lot if not yet marked applied).">POTENTIAL LISTING GAIN</Tooltip></div>
+        {(() => {
+          const appliedLots = (ipo.allottedLots ?? ipo.lotsApplied) || 0;
+          const displayLots = appliedLots > 0 ? appliedLots : 1;
+          const gain = ipo.currentGmp != null && ipo.lotSize > 0 ? ipo.currentGmp * ipo.lotSize * displayLots : null;
+          return (
+            <>
+              <div className={`num mt-1 text-2xl sm:text-3xl font-black ${(gain ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                {gain != null ? money(gain) : '—'}
+              </div>
+              <div className="mt-2 text-[11px] text-slate-500">
+                {appliedLots > 0
+                  ? `Est. for ${appliedLots} applied lot${appliedLots > 1 ? 's' : ''} (${pct(ipo.gmpPct)})`
+                  : `Est. per 1 lot (${pct(ipo.gmpPct)})`} • not guaranteed
+              </div>
+            </>
+          );
+        })()}
       </div>
     </div>
   );
@@ -81,15 +94,17 @@ export function IpoDetail() {
   const [range, setRange] = useState('ALL');
   const history = useGmpHistory(id, range);
   const subHist = useSubHistory(id);
-  const { update, remove, setStatus } = useIpoMutations();
+  const { update, remove, setStatus, apply } = useIpoMutations();
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [allotted, setAllotted] = useState('');
+  const [inputLots, setInputLots] = useState<string>('');
 
   if (isLoading) return <div className="glass p-6"><div className="skeleton h-64 w-full" /></div>;
   if (!ipo) return <div className="glass p-8 text-center text-sm text-slate-400">IPO not found.</div>;
 
-  const qty = ipo.lotSize * ipo.lotsApplied;
+  const currentLots = ipo.lotsApplied ?? 0;
+  const qty = ipo.lotSize * currentLots;
   const invested = ipo.issuePrice * qty;
   const profitOnAllotted = ipo.status === 'Allotted' && ipo.allottedLots
     ? calculateEstimatedProfit(ipo.currentGmp, ipo.lotSize, ipo.allottedLots)
@@ -155,6 +170,33 @@ export function IpoDetail() {
           <div><div className="text-slate-500">Invested</div><div className="num font-semibold">{inr(invested)}</div></div>
         </div>
         <div className="mt-4 grid gap-3 border-t border-white/5 pt-4 sm:grid-cols-3">
+          <label className="block text-xs">Lots applied
+            <span className="flex gap-2">
+              <input
+                value={inputLots}
+                onChange={(e) => setInputLots(e.target.value)}
+                type="number"
+                min={0}
+                placeholder={String(ipo.lotsApplied ?? 1)}
+                className="mt-1"
+              />
+              <button
+                disabled={apply.isPending}
+                onClick={() => {
+                  const val = inputLots === '' ? (ipo.lotsApplied ?? 1) : Math.max(0, parseInt(inputLots, 10) || 0);
+                  apply.mutate({
+                    id: ipo.id,
+                    applied: val > 0,
+                    lotsApplied: val,
+                    issuePrice: ipo.issuePrice,
+                  });
+                }}
+                className="mt-1 rounded-lg bg-blue-600/80 hover:bg-blue-600 px-3 text-xs text-white transition font-medium"
+              >
+                Save
+              </button>
+            </span>
+          </label>
           <label className="block text-xs">Allotment status
             <select value={ipo.status} onChange={(e) => setStatus.mutate({ id: ipo.id, status: e.target.value })} className="mt-1">
               {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -163,12 +205,13 @@ export function IpoDetail() {
           <label className="block text-xs">Allotted lots (actual)
             <span className="flex gap-2">
               <input value={allotted} onChange={(e) => setAllotted(e.target.value)} type="number" min={0} placeholder={String(ipo.allottedLots ?? '')} className="mt-1" />
-              <button onClick={() => update.mutate({ id: ipo.id, payload: { allottedLots: allotted === '' ? null : Number(allotted) } })} className="mt-1 rounded-lg bg-white/10 px-3 text-xs">Save</button>
+              <button onClick={() => update.mutate({ id: ipo.id, payload: { allottedLots: allotted === '' ? null : Number(allotted) } })} className="mt-1 rounded-lg bg-white/10 hover:bg-white/20 px-3 text-xs transition">Save</button>
             </span>
           </label>
-          <div className="text-xs text-slate-400">Applied <strong className="text-white num">{ipo.lotsApplied} lot{ipo.lotsApplied > 1 ? 's' : ''}</strong> · Allotted <strong className="text-white num">{ipo.allottedLots ?? '—'} lot{(ipo.allottedLots ?? 0) === 1 ? '' : 's'}</strong>
-            {profitOnAllotted != null && <div className="mt-1">Est. profit on allotted: <strong className="text-emerald-300 num">{money(profitOnAllotted)}</strong></div>}
-          </div>
+        </div>
+        <div className="mt-3 flex flex-wrap items-center justify-between text-xs text-slate-400 border-t border-white/5 pt-2.5">
+          <div>Applied <strong className="text-white num">{ipo.lotsApplied ?? 0} lot{(ipo.lotsApplied ?? 0) === 1 ? '' : 's'}</strong> · Allotted <strong className="text-white num">{ipo.allottedLots ?? '—'} lot{(ipo.allottedLots ?? 0) === 1 ? '' : 's'}</strong></div>
+          {profitOnAllotted != null && <div>Est. profit on allotted: <strong className="text-emerald-300 num">{money(profitOnAllotted)}</strong></div>}
         </div>
       </div>
 
