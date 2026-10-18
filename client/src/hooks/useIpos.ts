@@ -14,7 +14,8 @@ export function useRealtimeSync() {
 
     function connect() {
       try {
-        es = new EventSource('/api/events');
+        const BASE = import.meta.env.VITE_API_URL || '';
+        es = new EventSource(`${BASE}/api/events`);
 
         es.onmessage = (event) => {
           try {

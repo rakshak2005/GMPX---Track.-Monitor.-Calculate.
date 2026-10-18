@@ -10,14 +10,22 @@ export function startGmpScheduler(): void {
   console.log(`[scheduler] GMP & IPO sync every ${env.GMP_REFRESH_INTERVAL}s (${ms}ms).`);
   
   // Initial sync shortly after boot
-  setTimeout(() => {
+  setTimeout(async () => {
+    try {
+      const { cleanupExpiredIpos } = await import('../services/ipoStore.js');
+      await cleanupExpiredIpos(true);
+    } catch {}
     syncLiveIpos()
       .then((r) => console.log(`[scheduler] initial live IPO sync: ${r.totalScraped} scraped, ${r.created} new, ${r.updated} updated.`))
       .catch((e) => console.error('[scheduler] initial live IPO sync failed:', (e as Error).message));
   }, 2000);
 
-  timer = setInterval(() => {
+  timer = setInterval(async () => {
     console.log(`[scheduler] Running periodic 10-min live IPO sync...`);
+    try {
+      const { cleanupExpiredIpos } = await import('../services/ipoStore.js');
+      await cleanupExpiredIpos(true);
+    } catch {}
     syncLiveIpos()
       .then((r) => {
         if (r.totalScraped > 0 || r.errors.length > 0)

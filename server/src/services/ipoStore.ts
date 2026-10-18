@@ -57,29 +57,31 @@ let lastCleanupTime = 0;
  */
 export async function cleanupExpiredIpos(force = false): Promise<number> {
   const now = Date.now();
-  // Throttle database cleanup to once every 30 minutes unless forced
-  if (!force && now - lastCleanupTime < 30 * 60 * 1000) {
+  // Run at most every 60 seconds unless forced
+  if (!force && now - lastCleanupTime < 60 * 1000) {
     return 0;
   }
   lastCleanupTime = now;
 
   let deletedCount = 0;
   if (isNeonConnected()) {
-    // 1. Direct SQL deletion where close_date or listing_date is known in Postgres
+    // 1. Direct SQL deletion:
+    // Delete any IPO as soon as its listing_date has passed (listing_date < CURRENT_DATE)
+    // or bidding close_date is older than 2 days
     const res = await query(
       `DELETE FROM ipos 
-       WHERE (close_date IS NOT NULL AND close_date < CURRENT_DATE - INTERVAL '4 days')
-          OR (listing_date IS NOT NULL AND listing_date < CURRENT_DATE - INTERVAL '1 day')`
+       WHERE (listing_date IS NOT NULL AND listing_date < CURRENT_DATE)
+          OR (close_date IS NOT NULL AND close_date < CURRENT_DATE - INTERVAL '2 days')`
     );
     deletedCount = res.rowCount || 0;
 
-    // 2. Also check rows where close_date is NULL in DB but notes contains Bidding dates that have passed 4 days
+    // 2. Also check rows where close_date or listing_date is not formally stored, but notes contain passed dates
     const remaining = await query(
-      `SELECT id, name, close_date, notes FROM ipos WHERE close_date IS NULL AND notes IS NOT NULL`
+      `SELECT id, name, close_date, listing_date, notes FROM ipos WHERE notes IS NOT NULL`
     );
     const expiredIds: string[] = [];
     for (const row of remaining.rows) {
-      if (isClosedExpired(null, row.notes, 4)) {
+      if (isClosedExpired(row.close_date, row.notes, 2)) {
         expiredIds.push(row.id);
       }
     }
@@ -90,10 +92,22 @@ export async function cleanupExpiredIpos(force = false): Promise<number> {
       );
       deletedCount += delNotesRes.rowCount || 0;
     }
+
+    // 3. Prune old GMP history to conserve database storage limits (keep only the last 15 entries per IPO)
+    await query(`
+      DELETE FROM gmp_history
+      WHERE id NOT IN (
+        SELECT id FROM (
+          SELECT id, ROW_NUMBER() OVER (PARTITION BY ipo_id ORDER BY created_at DESC) as rn
+          FROM gmp_history
+        ) ranked
+        WHERE ranked.rn <= 15
+      )
+    `).catch(() => {});
   } else {
     const today = new Date().toISOString().slice(0, 10);
     for (const [id, ipo] of mem.ipos.entries()) {
-      const expiredByClose = isClosedExpired(ipo.closeDate, ipo.notes, 4);
+      const expiredByClose = isClosedExpired(ipo.closeDate, ipo.notes, 2);
       const expiredByListing = Boolean(ipo.listingDate && ipo.listingDate.slice(0, 10) < today);
       if (expiredByClose || expiredByListing) {
         mem.ipos.delete(id);
@@ -103,7 +117,7 @@ export async function cleanupExpiredIpos(force = false): Promise<number> {
   }
   if (deletedCount > 0) {
     invalidateIpoCache();
-    console.log(`[cleanup] Automatically deleted ${deletedCount} IPOs (closed date + 4 days passed or listing date passed).`);
+    console.log(`[cleanup] Automatically deleted ${deletedCount} listed/expired IPOs from database.`);
   }
   return deletedCount;
 }
@@ -155,6 +169,7 @@ export async function listIpos(userId?: string): Promise<IpoLean[]> {
         ui.actual_listing_price as "actualListingPrice"
       FROM ipos i
       LEFT JOIN user_ipos ui ON i.id = ui.ipo_id AND ui.user_id = $1
+      WHERE (i.listing_date IS NULL OR i.listing_date >= CURRENT_DATE)
       ORDER BY i.created_at DESC
     `;
     const res = await query(sql, [userId || '00000000-0000-0000-0000-000000000000']);
