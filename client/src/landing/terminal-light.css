@@ -180,7 +180,7 @@
 }
 .terminal-app [class~="bg-black/25"],
 .terminal-app [class~="bg-black/30"] {
-  background-color: rgba(11, 21, 18, 0.28);
+  background-color: rgba(11, 21, 18, 0.05);
 }
 .terminal-app [class~="bg-black/40"],
 .terminal-app [class~="bg-black/70"],
@@ -210,6 +210,29 @@
 .terminal-app [class~="from-teal-600"],
 .terminal-app [class~="from-[#0B1124]"] {
   background-image: none;
+}
+
+/* Gradient buttons keep a solid lime/soft fill instead of a dark gradient */
+.terminal-app [class~="from-blue-600"],
+.terminal-app [class~="from-blue-500"],
+.terminal-app [class~="to-indigo-600"],
+.terminal-app [class~="to-cyan-600"],
+.terminal-app [class~="to-teal-400"] {
+  background-color: var(--t-lime) !important;
+  color: var(--t-ink) !important;
+}
+.terminal-app [class~="from-amber-500"],
+.terminal-app [class~="from-amber-600"],
+.terminal-app [class~="from-[#0C1427]"],
+.terminal-app [class~="from-[#0C1427]/90"] {
+  background-color: rgba(240, 190, 70, 0.14);
+}
+.terminal-app [class~="from-emerald-500"],
+.terminal-app [class~="from-emerald-600"] {
+  background-color: rgba(143, 216, 60, 0.2);
+}
+.terminal-app [class*="shadow-["] {
+  box-shadow: 0 12px 26px -20px rgba(11, 21, 18, 0.4) !important;
 }
 
 /* ---------- borders ---------- */
