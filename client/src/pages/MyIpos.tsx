@@ -104,7 +104,7 @@ export function MyIpos() {
           </p>
           <div className="pt-2">
             <Link
-              to="/"
+              to="/dashboard"
               className="inline-flex items-center gap-1 rounded-md bg-blue-600/20 border border-blue-500/30 px-3 py-1.5 text-xs font-semibold text-blue-300 hover:bg-blue-600/30 transition"
             >
               Browse Live IPO Market →

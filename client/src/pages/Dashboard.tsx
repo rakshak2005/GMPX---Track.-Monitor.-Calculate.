@@ -326,7 +326,7 @@ export function Dashboard({ onAdd }: { onAdd?: () => void }) {
           </div>
           {appliedRows.length > 0 && (
             <Link
-              to="/my-ipos"
+              to="/ipos"
               className="text-xs font-semibold text-blue-400 hover:text-blue-300 transition inline-flex items-center gap-1"
             >
               Manage Book →

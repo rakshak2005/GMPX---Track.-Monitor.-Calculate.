@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { NavLink, Outlet, Link } from 'react-router-dom';
 import {
-  Radio, TrendingUp, BarChart3, BriefcaseBusiness, WalletCards, CalendarDays, Settings2, Menu, X, User, LogIn, LogOut, CheckCircle2, ShieldCheck, ExternalLink, Activity, Users, type LucideIcon
+  Radio, TrendingUp, BarChart3, BriefcaseBusiness, WalletCards, CalendarDays, Settings2, Menu, X, User, LogIn, LogOut, CheckCircle2, ShieldCheck, ExternalLink, Activity, Users, Globe2, type LucideIcon
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth.js';
 import { AuthModal } from '../components/AuthModal.js';
@@ -15,7 +15,7 @@ const NAV_SECTIONS: NavSection[] = [
   {
     title: 'MARKET',
     items: [
-      { to: '/', label: 'Live IPOs', icon: Radio, end: true },
+      { to: '/dashboard', label: 'Live IPOs', icon: Radio, end: true },
       { to: '/gmp', label: 'GMP Pulse', icon: TrendingUp },
       { to: '/subscription', label: 'Subscription', icon: BarChart3 },
       { to: '/retail-allotment', label: 'Retail Chances', icon: Users, badge: 'NEW' },
@@ -41,6 +41,7 @@ const NAV_SECTIONS: NavSection[] = [
     title: 'SYSTEM',
     items: [
       { to: '/settings', label: 'Settings', icon: Settings2 },
+      { to: '/', label: 'GMPX Website', icon: Globe2 },
     ],
   },
 ];
@@ -76,7 +77,7 @@ export function AppLayout({ onAdd }: { onAdd?: () => void }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-screen w-full max-w-full overflow-x-clip">
+    <div className="terminal-app min-h-screen w-full max-w-full overflow-x-clip">
       {/* Mobile top header bar */}
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-cyan-500/15 bg-[#090F1E]/95 px-3.5 py-2.5 backdrop-blur-md md:hidden w-full shadow-lg">
         <Link to="/" className="flex items-center gap-2">
@@ -282,7 +283,7 @@ export function AppLayout({ onAdd }: { onAdd?: () => void }) {
       {/* Mobile bottom nav */}
       <nav className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t border-white/[0.08] bg-[#090D17]/95 px-2 py-1.5 backdrop-blur md:hidden safe-area-pb">
         <NavLink
-          to="/"
+          to="/dashboard"
           end
           className={({ isActive }) =>
             `flex flex-col items-center gap-0.5 rounded-lg px-2.5 py-1 text-[10px] min-w-[50px] transition ${
