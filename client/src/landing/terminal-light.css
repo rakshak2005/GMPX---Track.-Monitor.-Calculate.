@@ -1,0 +1,328 @@
+/* =========================================================
+   GMPX Terminal — light canvas matching the marketing site
+   Scoped so the marketing pages keep their own styling.
+   ========================================================= */
+
+.terminal-app {
+  --t-bg: #f3f1ea;
+  --t-surface: #ffffff;
+  --t-soft: #f7f8f5;
+  --t-ink: #0b1512;
+  --t-muted: #5c6a62;
+  --t-line: rgba(11, 21, 18, 0.1);
+  --t-lime: #c7f464;
+  --t-green: #3f6b13;
+  --t-danger: #b93c43;
+  --t-amber: #8a6514;
+  background: var(--t-bg);
+  color: var(--t-ink);
+}
+
+/* Structural terminal surfaces */
+.terminal-app .glass,
+.terminal-app .terminal-panel {
+  background: var(--t-surface);
+  border: 1px solid var(--t-line);
+  border-radius: 12px;
+  box-shadow: 0 14px 34px -26px rgba(11, 21, 18, 0.4);
+}
+.terminal-app .terminal-subpanel {
+  background: var(--t-soft);
+  border-color: var(--t-line);
+}
+.terminal-app .terminal-header {
+  background: rgba(255, 255, 255, 0.94);
+  border-color: var(--t-line);
+}
+.terminal-app .skeleton {
+  background: linear-gradient(90deg, #eaede6 0%, #f8f9f6 50%, #eaede6 100%);
+  background-size: 200% 100%;
+}
+
+/* ---------- typography ---------- */
+.terminal-app [class~="text-slate-100"],
+.terminal-app [class~="text-slate-200"],
+.terminal-app [class~="text-slate-300"],
+.terminal-app [class~="text-slate-950"],
+.terminal-app [class~="text-white"],
+.terminal-app [class~="text-zinc-300"] {
+  color: var(--t-ink) !important;
+}
+.terminal-app [class~="text-slate-400"],
+.terminal-app [class~="text-slate-500"] {
+  color: var(--t-muted) !important;
+}
+.terminal-app [class~="text-slate-600"] {
+  color: #4a5750 !important;
+}
+.terminal-app [class~="text-blue-200"],
+.terminal-app [class~="text-blue-300"],
+.terminal-app [class~="text-blue-400"],
+.terminal-app [class~="text-cyan-200"],
+.terminal-app [class~="text-cyan-300"],
+.terminal-app [class~="text-cyan-400"],
+.terminal-app [class~="text-emerald-300"],
+.terminal-app [class~="text-emerald-400"],
+.terminal-app [class~="text-sky-300"],
+.terminal-app [class~="text-indigo-300"],
+.terminal-app [class~="text-violet-300"] {
+  color: var(--t-green) !important;
+}
+.terminal-app [class~="text-red-300"],
+.terminal-app [class~="text-red-400"],
+.terminal-app [class~="text-rose-300"],
+.terminal-app [class~="text-rose-400"] {
+  color: var(--t-danger) !important;
+}
+.terminal-app [class~="text-amber-200"],
+.terminal-app [class~="text-amber-300"],
+.terminal-app [class~="text-amber-400"],
+.terminal-app [class~="text-orange-300"] {
+  color: var(--t-amber) !important;
+}
+
+/* ---------- backgrounds ---------- */
+.terminal-app [class~="bg-[#080d19]"],
+.terminal-app [class~="bg-[#080D1A]"],
+.terminal-app [class~="bg-[#090D17]"],
+.terminal-app [class~="bg-[#090D17]/95"],
+.terminal-app [class~="bg-[#090d18]"],
+.terminal-app [class~="bg-[#090e1c]"],
+.terminal-app [class~="bg-[#090f1d]"],
+.terminal-app [class~="bg-[#090F1E]/95"],
+.terminal-app [class~="bg-[#0a101d]"],
+.terminal-app [class~="bg-[#0a101f]"],
+.terminal-app [class~="bg-[#0b1020]"],
+.terminal-app [class~="bg-[#0b1020]/95"],
+.terminal-app [class~="bg-[#0c1220]"],
+.terminal-app [class~="bg-[#0d1424]"],
+.terminal-app [class~="bg-[#0e1628]"],
+.terminal-app [class~="bg-[#0f172a]"],
+.terminal-app [class~="bg-[#101521]"],
+.terminal-app [class~="bg-[#101726]"],
+.terminal-app [class~="bg-[#121c32]"],
+.terminal-app [class~="!bg-[#0b1020]"] {
+  background-color: var(--t-surface) !important;
+  background-image: none;
+}
+.terminal-app [class~="bg-white/[0.015]"],
+.terminal-app [class~="bg-white/[0.02]"],
+.terminal-app [class~="bg-white/[0.025]"],
+.terminal-app [class~="bg-white/[0.03]"],
+.terminal-app [class~="bg-white/[0.04]"],
+.terminal-app [class~="bg-white/[0.05]"],
+.terminal-app [class~="bg-white/[0.06]"],
+.terminal-app [class~="bg-white/[0.08]"],
+.terminal-app [class~="bg-white/[0.14]"],
+.terminal-app [class~="bg-slate-500/10"],
+.terminal-app [class~="bg-slate-500/15"],
+.terminal-app [class~="bg-zinc-500/15"],
+.terminal-app [class~="bg-slate-700/40"],
+.terminal-app [class~="bg-slate-700/50"],
+.terminal-app [class~="bg-slate-800"] {
+  background-color: rgba(11, 21, 18, 0.045);
+}
+.terminal-app [class~="bg-blue-500/5"] {
+  background-color: rgba(199, 244, 100, 0.08);
+}
+.terminal-app [class~="bg-blue-500/10"],
+.terminal-app [class~="bg-blue-500/15"],
+.terminal-app [class~="bg-blue-500/20"],
+.terminal-app [class~="bg-blue-500/25"],
+.terminal-app [class~="bg-blue-500/30"],
+.terminal-app [class~="bg-blue-600/20"],
+.terminal-app [class~="bg-blue-600/25"],
+.terminal-app [class~="bg-blue-600/30"],
+.terminal-app [class~="bg-blue-600/35"],
+.terminal-app [class~="bg-blue-950/40"],
+.terminal-app [class~="bg-cyan-500/5"],
+.terminal-app [class~="bg-cyan-500/10"],
+.terminal-app [class~="bg-cyan-500/15"],
+.terminal-app [class~="bg-cyan-500/20"],
+.terminal-app [class~="bg-cyan-950/20"],
+.terminal-app [class~="bg-cyan-950/50"],
+.terminal-app [class~="bg-emerald-500/10"],
+.terminal-app [class~="bg-emerald-500/15"],
+.terminal-app [class~="bg-emerald-500/20"],
+.terminal-app [class~="bg-indigo-500/15"],
+.terminal-app [class~="bg-orange-500/15"],
+.terminal-app [class~="bg-rose-500/10"],
+.terminal-app [class~="bg-rose-500/15"],
+.terminal-app [class~="bg-rose-500/20"] {
+  background-color: rgba(199, 244, 100, 0.17);
+}
+.terminal-app [class~="bg-blue-600/40"],
+.terminal-app [class~="bg-blue-600/80"],
+.terminal-app [class~="bg-blue-500"],
+.terminal-app [class~="bg-blue-600"],
+.terminal-app [class~="bg-cyan-500"],
+.terminal-app [class~="bg-cyan-400"] {
+  background-color: var(--t-lime);
+  color: var(--t-ink);
+}
+.terminal-app [class~="bg-emerald-400"],
+.terminal-app [class~="bg-emerald-500"],
+.terminal-app [class~="bg-emerald-600"],
+.terminal-app [class~="bg-emerald-500/10"] {
+  background-color: rgba(143, 216, 60, 0.28);
+}
+.terminal-app [class~="bg-amber-400"],
+.terminal-app [class~="bg-amber-500/10"],
+.terminal-app [class~="bg-amber-500/15"],
+.terminal-app [class~="bg-amber-500/20"],
+.terminal-app [class~="bg-amber-500/25"] {
+  background-color: rgba(240, 190, 70, 0.2);
+}
+.terminal-app [class~="bg-red-500"],
+.terminal-app [class~="bg-rose-500/10"],
+.terminal-app [class~="bg-violet-500"] {
+  background-color: rgba(222, 76, 82, 0.16);
+}
+.terminal-app [class~="bg-black/25"],
+.terminal-app [class~="bg-black/30"] {
+  background-color: rgba(11, 21, 18, 0.28);
+}
+.terminal-app [class~="bg-black/40"],
+.terminal-app [class~="bg-black/70"],
+.terminal-app [class~="bg-black/75"],
+.terminal-app [class~="bg-black/80"] {
+  background-color: rgba(11, 21, 18, 0.58);
+}
+
+/* Remove dark gradients used by the sidebar / panels */
+.terminal-app [class~="from-[#0B1124]"],
+.terminal-app [class~="from-[#0c1322]"],
+.terminal-app [class~="from-[#0C1427]"],
+.terminal-app [class~="from-[#0c1527]/90"],
+.terminal-app [class~="via-[#090D1C]"],
+.terminal-app [class~="via-[#0a101f]/90"],
+.terminal-app [class~="to-[#070A16]"],
+.terminal-app [class~="to-[#070b16]"],
+.terminal-app [class~="to-[#0A0F1E]"],
+.terminal-app [class~="to-[#11192e]"],
+.terminal-app [class~="from-blue-600"],
+.terminal-app [class~="from-blue-500"],
+.terminal-app [class~="from-amber-500"],
+.terminal-app [class~="from-amber-600"],
+.terminal-app [class~="from-emerald-500"],
+.terminal-app [class~="from-emerald-600"],
+.terminal-app [class~="from-rose-500"],
+.terminal-app [class~="from-teal-600"],
+.terminal-app [class~="from-[#0B1124]"] {
+  background-image: none;
+}
+
+/* ---------- borders ---------- */
+.terminal-app [class~="border-white/[0.04]"],
+.terminal-app [class~="border-white/[0.05]"],
+.terminal-app [class~="border-white/[0.06]"],
+.terminal-app [class~="border-white/[0.07]"],
+.terminal-app [class~="border-white/[0.08]"],
+.terminal-app [class~="border-slate-500/30"],
+.terminal-app [class~="border-zinc-500/30"],
+.terminal-app [class~="border-slate-500"] {
+  border-color: rgba(11, 21, 18, 0.1);
+}
+.terminal-app [class~="border-blue-500"],
+.terminal-app [class~="border-blue-500/20"],
+.terminal-app [class~="border-blue-500/25"],
+.terminal-app [class~="border-blue-500/30"],
+.terminal-app [class~="border-blue-500/35"],
+.terminal-app [class~="border-blue-500/40"],
+.terminal-app [class~="border-blue-400/30"],
+.terminal-app [class~="border-cyan-500/10"],
+.terminal-app [class~="border-cyan-500/15"],
+.terminal-app [class~="border-cyan-500/20"],
+.terminal-app [class~="border-cyan-500/25"],
+.terminal-app [class~="border-cyan-500/30"],
+.terminal-app [class~="border-cyan-500/40"],
+.terminal-app [class~="border-cyan-500/50"],
+.terminal-app [class~="border-cyan-400/60"],
+.terminal-app [class~="border-emerald-500/20"],
+.terminal-app [class~="border-emerald-500/25"],
+.terminal-app [class~="border-emerald-500/30"],
+.terminal-app [class~="border-emerald-500/40"],
+.terminal-app [class~="border-emerald-400/40"],
+.terminal-app [class~="border-indigo-500/30"],
+.terminal-app [class~="border-violet-400/30"],
+.terminal-app [class~="border-teal-500/30"] {
+  border-color: rgba(76, 122, 30, 0.26);
+}
+.terminal-app [class~="border-amber-400"],
+.terminal-app [class~="border-amber-400/30"],
+.terminal-app [class~="border-amber-500/20"],
+.terminal-app [class~="border-amber-500/30"],
+.terminal-app [class~="border-amber-500/40"],
+.terminal-app [class~="border-orange-500/30"] {
+  border-color: rgba(154, 112, 22, 0.3);
+}
+.terminal-app [class~="border-rose-500/30"],
+.terminal-app [class~="border-rose-500/40"],
+.terminal-app [class~="border-red-400/30"] {
+  border-color: rgba(185, 60, 67, 0.3);
+}
+.terminal-app [class~="ring-emerald-400"] {
+  --tw-ring-color: rgba(76, 122, 30, 0.35);
+}
+.terminal-app [class~="shadow-cyan-500/20"],
+.terminal-app [class~="shadow-cyan-950/20"] {
+  box-shadow: 0 14px 34px -24px rgba(11, 21, 18, 0.45) !important;
+}
+
+/* ---------- hover states ---------- */
+.terminal-app [class~="hover:bg-white/5"]:hover,
+.terminal-app [class~="hover:bg-white/10"]:hover,
+.terminal-app [class~="hover:bg-white/[0.04]"]:hover {
+  background-color: rgba(11, 21, 18, 0.055);
+}
+.terminal-app [class~="hover:text-white"]:hover,
+.terminal-app [class~="hover:text-cyan-300"]:hover,
+.terminal-app [class~="hover:text-blue-300"]:hover {
+  color: var(--t-green) !important;
+}
+
+/* ---------- charts & tooltips ---------- */
+.terminal-app .recharts-cartesian-grid line {
+  stroke: rgba(11, 21, 18, 0.08) !important;
+}
+.terminal-app .recharts-text tspan,
+.terminal-app .recharts-cartesian-axis-tick-value {
+  fill: #6e7a73 !important;
+}
+.terminal-app .recharts-tooltip-wrapper > div {
+  background: #ffffff !important;
+  border: 1px solid rgba(11, 21, 18, 0.12) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 16px 40px -24px rgba(11, 21, 18, 0.5) !important;
+  color: var(--t-ink) !important;
+}
+.terminal-app .recharts-tooltip-wrapper span,
+.terminal-app .recharts-tooltip-wrapper li {
+  color: var(--t-ink) !important;
+}
+.terminal-app .recharts-legend-item-text {
+  color: var(--t-muted) !important;
+}
+
+/* ---------- terminal brand mark ---------- */
+.terminal-app .gmp-logo-word {
+  font-size: 16px;
+  letter-spacing: -0.02em;
+}
+.terminal-app .gmp-logo-mark {
+  width: 26px;
+  height: 26px;
+}
+
+/* Consistent scrollbars inside the terminal */
+.terminal-app ::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+.terminal-app ::-webkit-scrollbar-thumb {
+  background: rgba(11, 21, 18, 0.18);
+  border-radius: 99px;
+}
+.terminal-app ::-webkit-scrollbar-track {
+  background: transparent;
+}

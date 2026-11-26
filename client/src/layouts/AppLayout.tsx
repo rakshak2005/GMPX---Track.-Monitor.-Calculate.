@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth.js';
 import { AuthModal } from '../components/AuthModal.js';
+import { Logo } from '../landing/components/Brand';
 
 interface NavSection {
   title: string;
@@ -80,21 +81,11 @@ export function AppLayout({ onAdd }: { onAdd?: () => void }) {
     <div className="terminal-app min-h-screen w-full max-w-full overflow-x-clip">
       {/* Mobile top header bar */}
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-cyan-500/15 bg-[#090F1E]/95 px-3.5 py-2.5 backdrop-blur-md md:hidden w-full shadow-lg">
-        <Link to="/" className="flex items-center gap-2">
-          <img
-            src="/logo.png"
-            alt="GMPX"
-            className="h-7 w-7 object-contain drop-shadow-[0_2px_10px_rgba(234,179,8,0.4)]"
-          />
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-base font-black tracking-tight text-white">GMPX</span>
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            </div>
-            <div className="text-[9px] uppercase tracking-wider font-semibold text-slate-400">
-              Indian IPO Intelligence
-            </div>
-          </div>
+        <Link to="/" className="flex items-center gap-2" aria-label="GMPX home">
+          <Logo />
+          <span className="text-[9px] uppercase tracking-wider font-semibold text-slate-500">
+            IPO Intelligence
+          </span>
         </Link>
         <div className="flex items-center gap-2">
           {user ? (
@@ -127,21 +118,11 @@ export function AppLayout({ onAdd }: { onAdd?: () => void }) {
       {/* Desktop financial terminal sidebar */}
       <aside className="fixed inset-y-0 left-0 hidden w-60 flex-col border-r border-cyan-500/10 bg-gradient-to-b from-[#0B1124] via-[#090D1C] to-[#070A16] p-4 md:flex shadow-2xl z-20">
         {/* Brand identity */}
-        <Link to="/" className="flex items-center gap-2.5 pb-4 border-b border-white/[0.08]">
-          <img
-            src="/logo.png"
-            alt="GMPX"
-            className="h-8 w-8 object-contain drop-shadow-[0_2px_12px_rgba(234,179,8,0.45)]"
-          />
-          <div>
-            <div className="text-base font-black tracking-tight text-white flex items-center gap-1.5">
-              <span className="bg-gradient-to-r from-white via-slate-100 to-slate-300 bg-clip-text text-transparent">GMPX</span>
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            </div>
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-cyan-400/80">
-              Indian IPO Intelligence
-            </div>
-          </div>
+        <Link to="/" className="flex items-center gap-2.5 pb-4 border-b border-white/[0.08]" aria-label="GMPX home">
+          <Logo />
+          <span className="text-[9px] font-semibold uppercase tracking-wider text-emerald-400">
+            IPO Terminal
+          </span>
         </Link>
 
         {/* Financial Terminal Navigation Rail */}
@@ -352,15 +333,8 @@ export function AppLayout({ onAdd }: { onAdd?: () => void }) {
           >
             <div className="flex items-center justify-between pb-3.5 border-b border-white/[0.08]">
               <div className="flex items-center gap-2">
-                <img
-                  src="/logo.png"
-                  alt="GMPX"
-                  className="h-7 w-7 object-contain drop-shadow-[0_2px_8px_rgba(234,179,8,0.35)]"
-                />
-                <div>
-                  <div className="font-bold text-white tracking-tight text-sm">GMPX</div>
-                  <div className="text-[9px] text-slate-400 uppercase tracking-wider font-semibold">IPO Terminal</div>
-                </div>
+                <Logo />
+                <span className="text-[9px] text-slate-500 uppercase tracking-wider font-semibold">IPO Terminal</span>
               </div>
               <button
                 onClick={() => setMobileMenuOpen(false)}

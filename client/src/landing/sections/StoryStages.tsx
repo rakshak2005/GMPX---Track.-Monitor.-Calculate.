@@ -36,6 +36,15 @@ export function HeroStage() {
       <Globe />
 
       <div className="hero-copy">
+        <motion.div className="hero-status" {...enter(0.02)}>
+          <span className="hero-status-dot" aria-hidden="true" />
+          Global desk active
+          <i aria-hidden="true" />
+          6 exchanges monitored
+          <i aria-hidden="true" />
+          Demo environment
+        </motion.div>
+
         <motion.div {...enter(0.05)}>
           <Chip>Global Market Intelligence</Chip>
         </motion.div>
